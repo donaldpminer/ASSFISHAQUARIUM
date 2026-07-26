@@ -71,7 +71,7 @@ end
 local function refreshDropdown()
 	if not dropdown then return end
 	local i = 0
-	core.EachModule(function(M)
+	core.EachAvailableModule(function(M)
 		i = i + 1
 		local r = getRow(i)
 		r:SetPoint("TOPLEFT", dropdown, "TOPLEFT", 8, -8 - (i - 1) * ROW_H)
@@ -163,7 +163,7 @@ function core.BuildMinimap()
 	button:SetScript("OnEnter", function(self)
 		GameTooltip:SetOwner(self, "ANCHOR_LEFT")
 		GameTooltip:SetText("ASSFISH AQUARIUM", 1, 1, 1)
-		core.EachModule(function(M)
+		core.EachAvailableModule(function(M)
 			local s = STATE_COLOR[core.GetModuleState(M.key)] or STATE_COLOR.hidden
 			GameTooltip:AddDoubleLine(M.title, s[4], 0.8, 0.8, 0.8, s[1], s[2], s[3])
 		end)

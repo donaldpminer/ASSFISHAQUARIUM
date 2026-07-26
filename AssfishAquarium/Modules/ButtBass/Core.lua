@@ -23,7 +23,11 @@ local core = ns.core
 -- Shamans (the class check runs at first-run seed time, i.e. login, when the class is known).
 local M = core.RegisterModule({
 	key = "bb", title = "Shaman Stuff", perChar = true,
-	default = function() return select(2, UnitClass("player")) == "SHAMAN" end,
+	-- Only EXISTS for Shamans: registered so the always-on Windfury service keeps its M/DB, but
+	-- hidden from the minimap + settings and never enabled for other classes. (The WF Now
+	-- announcer still runs for everyone.) Enabled + unlocked by default on Shamans.
+	available = function() return select(2, UnitClass("player")) == "SHAMAN" end,
+	default = true,
 })
 
 --------------------------------------------------------------------------------

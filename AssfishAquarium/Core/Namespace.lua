@@ -59,11 +59,32 @@ function core.RegisterModule(spec)
 	M.Disable = spec.Disable
 	M.SetDisplayState = spec.SetDisplayState
 	M.BuildSettings = spec.BuildSettings
+	-- available: bool/function -> should this module EXIST for the player at all? An
+	-- unavailable module (e.g. Shaman Stuff for a non-Shaman) is registered so its always-on
+	-- service still has an M/DB, but it never appears in the minimap, settings, or gets enabled.
+	M.available = spec.available -- nil = always available
 	return M
 end
 
-function core.EachModule(fn) -- iterate in registration order
+-- Is a module available to this player? (class-gated modules answer via a function.)
+function core.IsAvailable(key)
+	local M = ns.modules[key]
+	if not M then return false end
+	local a = M.available
+	if a == nil then return true end
+	if type(a) == "function" then return a() and true or false end
+	return a and true or false
+end
+
+function core.EachModule(fn) -- iterate ALL registered modules, in registration order
 	for _, key in ipairs(ns.moduleOrder) do fn(ns.modules[key]) end
+end
+
+-- Iterate only modules available to this player (used by every user-facing surface).
+function core.EachAvailableModule(fn)
+	for _, key in ipairs(ns.moduleOrder) do
+		if core.IsAvailable(key) then fn(ns.modules[key]) end
+	end
 end
 
 -- Call a module/service hook defensively: one module's error must never abort login or the
@@ -209,9 +230,10 @@ function core.CycleModuleState(key)
 	return nextState
 end
 
--- Apply saved states to every registered module (called by Boot at login).
+-- Apply saved states to every AVAILABLE module (called by Boot at login). Unavailable
+-- modules (wrong class) are left untouched -- never enabled, never shown.
 function core.StartModules()
-	core.EachModule(function(M)
+	core.EachAvailableModule(function(M)
 		core.SetModuleState(M.key, core.GetModuleState(M.key))
 	end)
 end

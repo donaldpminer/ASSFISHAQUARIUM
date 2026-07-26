@@ -51,7 +51,7 @@ local function buildParentPanel(f)
 	sub:SetPoint("TOPLEFT", 16, -40)
 	sub:SetText("Enable the tools you want. Each has its own page in the list at the left.")
 	local y = -70
-	core.EachModule(function(M)
+	core.EachAvailableModule(function(M)
 		local cb = W.check(f, 16, y, "Enable " .. M.title,
 			function() return core.GetModuleState(M.key) ~= "hidden" end,
 			function(v) core.SetModuleState(M.key, v and "unlocked" or "hidden") end)
@@ -68,7 +68,7 @@ function core.InitSettings()
 	parentCategory = Settings.RegisterCanvasLayoutCategory(root, "ASSFISH AQUARIUM")
 	Settings.RegisterAddOnCategory(parentCategory)
 	core.settingsParent = parentCategory
-	core.EachModule(function(M) core.AddSubcategory(M) end)
+	core.EachAvailableModule(function(M) core.AddSubcategory(M) end)
 end
 
 function core.OpenSettings()
