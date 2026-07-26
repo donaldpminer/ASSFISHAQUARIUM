@@ -14,6 +14,20 @@ Core\Settings.lua
 Core\Minimap.lua
 Core\Boot.lua
 
-# --- modules (added as they are integrated) ---
+# --- modules (each: first-loaded file runs core.RegisterModule) ---
 Modules\Mobber\Core.lua
 Modules\Mobber\Window.lua
+
+Modules\FFTracker\Data.lua
+Modules\FFTracker\Core.lua
+Modules\FFTracker\Window.lua
+
+Modules\Sunderboard\Data.lua
+Modules\Sunderboard\Core.lua
+Modules\Sunderboard\UI.lua
+
+Modules\ButtBass\Core.lua
+Modules\ButtBass\Display.lua
+Modules\ButtBass\Windfury.lua
+Modules\ButtBass\WFDisplay.lua
+Modules\ButtBass\Options.lua
