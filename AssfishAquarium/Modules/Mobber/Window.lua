@@ -22,13 +22,13 @@
 local ADDON, ns = ...
 local core = ns.core
 local M = ns.modules.mob
+local W = core.widgets
 
 local NUM = M.NUM_SLOTS               -- debuff slots per mob (16)
 local GAP, HDR_H, BLOCK_GAP, PAD = 2, 15, 8, 6 -- slot gap / header height / gap between mobs / window padding
 local DEFAULT_SLOT, MIN_SLOT, MAX_SLOT, SLOT_STEP = 24, 20, 60, 4 -- icon-size slider bounds
 local MAX_GHOSTS = 16                   -- cap on lingering fallen-off "0" cells shown per mob
 
-local MARKER_TEX = "Interface\\TargetingFrame\\UI-RaidTargetingIcons"
 local BACKDROP = {
 	bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
 	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -39,7 +39,7 @@ local SLOT_BACKDROP = {
 	bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1,
 }
 
-local function cropIcon(t) t:SetTexCoord(0.08, 0.92, 0.08, 0.92) end
+local function cropIcon(t) core.CropIcon(t) end
 
 -- The dialog parchment texture is semi-transparent on its own, so panels let the world
 -- (and each other) bleed through. Lay a solid, fully-opaque backing inside the border.
@@ -61,11 +61,7 @@ local function fmtTime(rem)
 	return tostring(math.floor(rem))
 end
 
-local function setMarker(tex, index)
-	tex:SetTexture(MARKER_TEX)
-	local c, r = (index - 1) % 4, math.floor((index - 1) / 4)
-	tex:SetTexCoord(c * 0.25, c * 0.25 + 0.25, r * 0.25, r * 0.25 + 0.25)
-end
+local function setMarker(tex, index) core.SetRaidMarker(tex, index) end
 
 -- Mob row order: marked first (Skull 8 -> Star 1), then higher level, then first-seen.
 local function lvlVal(l) if l == -1 then return 999 end return l or 0 end
@@ -650,90 +646,8 @@ StaticPopupDialogs["MOBBER_RESET_DEFAULTS"] = {
 	timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 
--- A labelled checkbox reflecting get() and calling set(bool) on click. Has :sync().
-local function makeCheck(parent, x, y, label, get, set)
-	local cb = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
-	cb:SetPoint("TOPLEFT", x, y)
-	cb:SetSize(24, 24)
-	local fs = cb:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	fs:SetPoint("LEFT", cb, "RIGHT", 2, 0)
-	fs:SetText(label)
-	cb:SetScript("OnClick", function(self) set(self:GetChecked() and true or false) end)
-	cb.sync = function() cb:SetChecked(get() and true or false) end
-	cb.sync()
-	return cb
-end
-
--- A radio-style row: mutually-exclusive check buttons. options = {{text,value},...};
--- get() returns the current value; clicking one calls set(value). Returns { sync = fn }.
-local function makeRadioRow(parent, x, y, labelText, options, get, set)
-	local lbl = parent:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	lbl:SetPoint("TOPLEFT", x, y - 4)
-	lbl:SetText(labelText)
-	local btns = {}
-	local function refresh()
-		local v = get()
-		for _, o in ipairs(btns) do o:SetChecked(o.value == v) end
-	end
-	for i, opt in ipairs(options) do
-		local cb = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
-		cb:SetPoint("TOPLEFT", x + 66 + (i - 1) * 52, y)
-		cb:SetSize(22, 22)
-		local fs = cb:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-		fs:SetPoint("LEFT", cb, "RIGHT", 1, 0)
-		fs:SetText(opt.text)
-		cb.value = opt.value
-		cb:SetScript("OnClick", function(self) set(self.value); refresh() end)
-		btns[#btns + 1] = cb
-	end
-	refresh()
-	return { sync = refresh }
-end
-
--- Open the standard colour picker seeded with (r,g,b); onChange(r,g,b) fires live. Feature-
--- detects the modern SetupColorPickerAndShow vs the legacy func/cancelFunc API.
-local function showColorPicker(r, g, b, onChange)
-	local function applyNow()
-		local nr, ng, nb = ColorPickerFrame:GetColorRGB()
-		onChange(nr, ng, nb)
-	end
-	if ColorPickerFrame.SetupColorPickerAndShow then
-		ColorPickerFrame:SetupColorPickerAndShow({
-			r = r, g = g, b = b, hasOpacity = false,
-			swatchFunc = applyNow,
-			cancelFunc = function() onChange(r, g, b) end,
-		})
-	else
-		ColorPickerFrame:Hide() -- reset its OnShow
-		ColorPickerFrame.func = applyNow
-		ColorPickerFrame.cancelFunc = function() onChange(r, g, b) end
-		ColorPickerFrame.hasOpacity = false
-		ColorPickerFrame.previousValues = { r = r, g = g, b = b }
-		ColorPickerFrame:SetColorRGB(r, g, b)
-		ColorPickerFrame:Show()
-	end
-end
-
--- A small clickable colour swatch showing get()'s {r,g,b}; clicking opens the picker and
--- calls set({r,g,b}). Has :sync() to refresh its shown colour.
-local function makeColorSwatch(parent, x, y, get, set)
-	local sw = CreateFrame("Button", nil, parent)
-	sw:SetSize(18, 18)
-	sw:SetPoint("TOPLEFT", x, y)
-	local border = sw:CreateTexture(nil, "BACKGROUND")
-	border:SetAllPoints()
-	border:SetColorTexture(0, 0, 0, 1)
-	local tex = sw:CreateTexture(nil, "ARTWORK")
-	tex:SetPoint("TOPLEFT", 1, -1)
-	tex:SetPoint("BOTTOMRIGHT", -1, 1)
-	sw.sync = function() local c = get(); tex:SetColorTexture(c[1], c[2], c[3], 1) end
-	sw:SetScript("OnClick", function()
-		local c = get()
-		showColorPicker(c[1], c[2], c[3], function(r, g, b) set({ r, g, b }); sw.sync() end)
-	end)
-	sw.sync()
-	return sw
-end
+-- (Option-widget builders -- checkbox, radio row, colour picker/swatch -- now live in
+-- Core/Lib_Widgets.lua as core.widgets; addOptionControls below uses `W` for them.)
 
 -- Populate the main option controls onto frame `p` (no window chrome). Returns refresh().
 -- Native-style checkboxes / radios so all options are visible at once. Shared by the
@@ -741,7 +655,7 @@ end
 local function addOptionControls(p)
 	local syncs = {}
 	local function check(x, y, label, get, set)
-		syncs[#syncs + 1] = makeCheck(p, x, y, label, get, set).sync
+		syncs[#syncs + 1] = W.check(p, x, y, label, get, set).sync
 	end
 
 	local title = p:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -753,27 +667,27 @@ local function addOptionControls(p)
 	check(14, -66, "Only show in raids", function() return M.db.raidOnly ~= false end,
 		function(v) M.db.raidOnly = v; M.Rebuild() end)
 
-	syncs[#syncs + 1] = makeRadioRow(p, 14, -96, "Grow:",
+	syncs[#syncs + 1] = W.radioRow(p, 14, -96, "Grow:",
 		{ { text = "Left", value = false }, { text = "Right", value = true } },
 		function() return M.db.growRight and true or false end,
 		function(v) M.db.growRight = v; reanchor(); M.Rebuild() end).sync
-	syncs[#syncs + 1] = makeRadioRow(p, 14, -122, "Stack:",
+	syncs[#syncs + 1] = W.radioRow(p, 14, -122, "Stack:",
 		{ { text = "Down", value = false }, { text = "Up", value = true } },
 		function() return M.db.growUp and true or false end,
 		function(v) M.db.growUp = v; reanchor(); M.Rebuild() end).sync
-	syncs[#syncs + 1] = makeRadioRow(p, 14, -150, "Layout:",
+	syncs[#syncs + 1] = W.radioRow(p, 14, -150, "Layout:",
 		{ { text = "1x16", value = 1 }, { text = "2x8", value = 2 }, { text = "Prio'd only", value = "prio" } },
 		function() return M.db.gridRows or 1 end,
 		function(v) M.db.gridRows = v; M.Rebuild() end).sync
 
 	check(14, -182, "Glow debuffs I applied", function() return M.db.hlMine ~= false end,
 		function(v) M.db.hlMine = v; M.Rebuild() end)
-	syncs[#syncs + 1] = makeColorSwatch(p, 210, -182,
+	syncs[#syncs + 1] = W.colorSwatch(p, 210, -182,
 		function() return M.db.hlMineColor or DEFAULT_HL_MINE end,
 		function(c) M.db.hlMineColor = c; M.Rebuild() end).sync
 	check(14, -208, "Glow my class (not me)", function() return M.db.hlClass and true or false end,
 		function(v) M.db.hlClass = v; M.Rebuild() end)
-	syncs[#syncs + 1] = makeColorSwatch(p, 210, -208,
+	syncs[#syncs + 1] = W.colorSwatch(p, 210, -208,
 		function() return M.db.hlClassColor or DEFAULT_HL_CLASS end,
 		function(c) M.db.hlClassColor = c; M.Rebuild() end).sync
 

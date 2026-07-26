@@ -114,13 +114,9 @@ local function shortName(name)
 	return (name:gsub("%-.*$", ""))
 end
 
--- Show the raid target marker icon (index 1-8: Star..Skull) on a texture.
--- NOTE: Blizzard's SetRaidTargetIconTexture only sets the texcoords, NOT the
--- texture file - so we set the atlas ourselves (and the same 0.25 grid coords).
+-- Show the raid target marker icon (index 1-8: Star..Skull) on a texture. (Shared impl.)
 local function setMarkerTexture(tex, index)
-	tex:SetTexture("Interface\\TargetingFrame\\UI-RaidTargetingIcons")
-	local c, r = (index - 1) % 4, math.floor((index - 1) / 4)
-	tex:SetTexCoord(c * 0.25, c * 0.25 + 0.25, r * 0.25, r * 0.25 + 0.25)
+	core.SetRaidMarker(tex, index)
 end
 
 -- ===== shared per-entry display helpers (used by both views) ================
@@ -231,9 +227,9 @@ local function hidePool(pool, from)
 	end
 end
 
--- Trim the built-in transparent border off a WoW icon texture.
+-- Trim the built-in transparent border off a WoW icon texture. (Shared impl.)
 local function cropIcon(tex)
-	tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+	core.CropIcon(tex)
 end
 
 -- ==========================================================================

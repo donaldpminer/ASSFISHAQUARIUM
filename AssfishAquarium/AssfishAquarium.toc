@@ -10,6 +10,7 @@
 # --- shared core (order = load order) ---
 Core\Namespace.lua
 Core\Lib_Widgets.lua
+Core\Lib_Util.lua
 Core\Settings.lua
 Core\Minimap.lua
 Core\Boot.lua
