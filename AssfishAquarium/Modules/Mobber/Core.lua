@@ -47,6 +47,7 @@ local GHOST_TTL = 5         -- linger a fallen-off debuff (fading "0") this long
 -- hold the player's overrides, so shipped defaults still reach them.
 local DEFAULT_BLACKLIST = {
 	[15718] = "Ouro Scarab",                    -- AQ40 (Ouro)
+	[15622] = "Vekniss Borer",                  -- AQ40 (swarm from Vekniss Warriors)
 	[13996] = "Blackwing Technician",           -- BWL
 	[11669] = "Flame Imp",                      -- Molten Core
 	[15977] = "Infectious/Poisonous Skitterer", -- Naxxramas
