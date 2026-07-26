@@ -1,0 +1,6 @@
+# Keep LF in the repo; let Git handle the working-copy checkout per platform.
+* text=auto eol=lf
+*.png binary
+*.tga binary
+*.blp binary
+*.zip binary
