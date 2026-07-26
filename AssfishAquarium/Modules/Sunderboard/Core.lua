@@ -99,23 +99,6 @@ local function award(guid, name, class, key, pts)
 	p.byKey[key] = (p.byKey[key] or 0) + pts
 end
 
--- ------------------------------------------------------------ fall-off msg --
-
-local function notifyFalloff(a, destName)
-	local mode = M.db and M.db.settings.notifyFalloff or "mine"
-	if mode == "off" then return end
-
-	local me = playerGUID()
-	local isMine = (a.sourceGUID == me) or (a.owners and a.owners[me] ~= nil)
-	if mode == "mine" and not isMine then return end
-
-	local minUp = (M.db and M.db.settings.falloffMinUptime) or 3
-	if (GetTime() - (a.applied or 0)) < minUp then return end  -- skip instant swaps
-
-	local who = a.sourceName or (a.owners and next(a.owners) and a.owners[next(a.owners)].name) or "?"
-	print(string.format("|cffff8000Sunderboard|r: %s on %s fell off (%s).",
-		D.LABEL[a.key] or a.key, destName or "target", who or "?"))
-end
 
 -- ------------------------------------------------------ debuff state machine --
 
@@ -124,7 +107,6 @@ local function evictExclusive(td, def, destName)
 	if not def.exclusiveGroup then return end
 	for k, a in pairs(td) do
 		if a.key ~= def.key and a.def.exclusiveGroup == def.exclusiveGroup then
-			notifyFalloff(a, destName)
 			td[k] = nil
 		end
 	end
@@ -244,7 +226,6 @@ local function removeAura(destGUID, destName, def)
 	if not td then return end
 	local a = td[def.key]
 	if a then
-		notifyFalloff(a, destName)
 		td[def.key] = nil
 		if not next(td) then tracked[destGUID] = nil; baseArmorCache[destGUID] = nil end
 	end
@@ -490,8 +471,6 @@ M.UpdateSession = updateSession
 local function initDB()
 	local db = M.db
 	db.settings = db.settings or {}
-	if db.settings.notifyFalloff == nil then db.settings.notifyFalloff = "mine" end  -- mine|all|off
-	if db.settings.falloffMinUptime == nil then db.settings.falloffMinUptime = 3 end
 	if db.settings.scope == nil then db.settings.scope = "group" end  -- group|instance|always
 	db.session = db.session or { points = {}, instanceID = nil, label = nil }
 	db.session.points = db.session.points or {}
@@ -564,9 +543,6 @@ function M.OnSlash(msg)
 	if msg == "reset" then
 		Core:Reset()
 		print("|cffff8000Sunderboard|r: leaderboard reset.")
-	elseif msg == "mine" or msg == "all" or msg == "off" then
-		M.db.settings.notifyFalloff = msg
-		print("|cffff8000Sunderboard|r: fall-off alerts = " .. msg)
 	elseif msg == "options" or msg == "opt" or msg == "config" then
 		core.OpenSettings()
 	elseif msg == "show" then

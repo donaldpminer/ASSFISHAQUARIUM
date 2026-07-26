@@ -273,18 +273,9 @@ function M.BuildSettings(panel)
 		function() return M.db.settings.scope or "group" end,
 		function(v) M.db.settings.scope = v; if M.UpdateSession then M.UpdateSession() end end).sync
 
-	syncs[#syncs + 1] = W.radioRow(panel, 14, -104, "Fall-off alerts:",
-		{ { text = "Mine", value = "mine" }, { text = "All", value = "all" }, { text = "Off", value = "off" } },
-		function() return M.db.settings.notifyFalloff or "mine" end,
-		function(v) M.db.settings.notifyFalloff = v end).sync
-
-	syncs[#syncs + 1] = W.slider(panel, 14, -140, "Fall-off min uptime (s)", 0, 10, 1,
-		function() return M.db.settings.falloffMinUptime or 3 end,
-		function(v) M.db.settings.falloffMinUptime = v end).sync
-
 	local reset = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	reset:SetSize(160, 22)
-	reset:SetPoint("TOPLEFT", 14, -188)
+	reset:SetPoint("TOPLEFT", 14, -110)
 	reset:SetText("Reset leaderboard")
 	reset:SetScript("OnClick", function()
 		M.Core:Reset()
@@ -292,7 +283,7 @@ function M.BuildSettings(panel)
 	end)
 
 	local note = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-	note:SetPoint("TOPLEFT", 14, -220)
+	note:SetPoint("TOPLEFT", 14, -142)
 	note:SetPoint("RIGHT", panel, "RIGHT", -14, 0)
 	note:SetJustifyH("LEFT")
 	note:SetWordWrap(true)
