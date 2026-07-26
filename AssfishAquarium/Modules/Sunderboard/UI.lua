@@ -27,8 +27,15 @@ local BAR_TEX = "Interface\\TargetingFrame\\UI-StatusBar"
 local frame, header, rows
 local dirty, elapsed = false, 0
 
+-- Display only: abbreviate the raw points (~ extra physical damage enabled) with K / M so big
+-- raid totals stay readable. Sorting + bar length use the raw p.total, never this string.
 local function fmt(n)
-	return string.format("%d", n + 0.5)  -- raw points (~= extra physical damage enabled)
+	if n >= 1e6 then
+		return string.format(n >= 1e7 and "%.0fM" or "%.1fM", n / 1e6)
+	elseif n >= 1e3 then
+		return string.format(n >= 1e4 and "%.0fK" or "%.1fK", n / 1e3)
+	end
+	return string.format("%d", n + 0.5)
 end
 
 local function sortedPlayers()
