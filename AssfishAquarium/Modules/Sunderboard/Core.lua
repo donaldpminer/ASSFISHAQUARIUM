@@ -3,15 +3,19 @@
 -- to the players who applied them, and converts physical damage taken by those
 -- targets into points.
 --
--- SCORING MODEL (abstract points, no base-armor guess required)
---   For each physical, non-bleed hit of `amount` on a target that has one or
---   more tracked armor debuffs, we split `amount` among those debuffs in
---   proportion to how much armor each one is currently removing, and award each
---   debuff's share to the player(s) who applied it. Shares sum to 1, so the
---   whole leaderboard totals ~= all the physical damage the raid dealt through
---   softened armor. This rewards debuffing EARLY (more hits counted), on
---   HIGHER-HP targets (more damage flows through), and on MORE targets -- and a
---   debuff that strips more armor earns a bigger slice.
+-- SCORING MODEL (marginal damage enabled)
+--   Each target has an ESTIMATED base armor from its level + tier (see Data.lua). For each
+--   physical, non-bleed hit of `amount` on a target with one or more tracked armor debuffs, we
+--   use the real armor->damage formula to find how much EXTRA damage the stripped armor let
+--   through -- the hit landing at the softened armor (base - removed) minus what it would have
+--   been at full base armor -- then split that extra among the active debuffs in proportion to
+--   the armor each removes, awarding each debuff's share to whoever applied it. So the per-hit
+--   pot grows with how much armor was stripped (and with how much damage flows through), and
+--   every point of armor removed is valued equally (each Sunder stack the same -- no last-stack
+--   bias). This rewards debuffing EARLY, on HIGHER-HP / MORE targets, and DEEP-softening a target
+--   -- fixing the old relative-weight split where monopolizing a lightly-sundered target could
+--   beat sharing a deeply-stacked one. Board totals ~= the extra physical damage the raid enabled
+--   through armor debuffs.
 --
 -- Why physical, non-bleed only: armor mitigates physical damage, so only that
 -- damage benefits from these debuffs. Bleeds (Rend, Rip, Deep Wounds, ...) are
@@ -275,20 +279,51 @@ local function armorOf(a)
 	return D.ArmorValue(a.def, stacks)
 end
 
+-- Estimated base armor (no debuffs) for a target, cached on its tracked entry. Prefer an NPC-id
+-- override; else read the mob's level if it happens to be your target/mouseover (cache only a
+-- real level -- an unknown one defaults to 63 but stays refreshable as you target the mob).
+local function resolveBaseArmor(destGUID, td)
+	if td.baseArmor then return td.baseArmor end
+	local override = D.ARMOR_OVERRIDE[D.NpcId(destGUID) or 0]
+	if override then td.baseArmor = override; return override end
+	local lvl
+	if UnitExists("target") and UnitGUID("target") == destGUID then
+		lvl = UnitLevel("target")
+	elseif UnitExists("mouseover") and UnitGUID("mouseover") == destGUID then
+		lvl = UnitLevel("mouseover")
+	end
+	if lvl and lvl > 0 then
+		td.baseArmor = D.BaseArmorForLevel(lvl)
+		return td.baseArmor
+	end
+	return D.BaseArmorForLevel(nil) -- unknown level -> assume a level-63 raid mob (3731)
+end
+
 local function onDamage(destGUID, amount)
 	if not session.active or not amount or amount <= 0 then return end
 	local td = tracked[destGUID]
 	if not td then return end
 
-	local total = 0
+	-- total armor the active tracked debuffs are stripping from this target
+	local removed = 0
 	for _, a in pairs(td) do
-		if contributes(a) then total = total + armorOf(a) end
+		if contributes(a) then removed = removed + armorOf(a) end
 	end
-	if total <= 0 then return end
+	if removed <= 0 then return end
+
+	-- Marginal model: `amount` landed at the SOFTENED armor (base - removed). Compare to the same
+	-- hit at full base armor to get the EXTRA damage the debuffs enabled. With m(A) = K/(A+K),
+	-- extra = amount * (1 - m(base)/m(softened)) = amount * (1 - (softened+K)/(base+K)).
+	local base = resolveBaseArmor(destGUID, td)
+	local softened = base - removed
+	if softened < 0 then softened = 0 end
+	local K = D.ATTACKER_K
+	local extra = amount * (1 - (softened + K) / (base + K))
+	if extra <= 0 then return end
 
 	for _, a in pairs(td) do
 		if contributes(a) then
-			local pts = amount * (armorOf(a) / total)
+			local pts = extra * (armorOf(a) / removed)
 			if a.owners then
 				local sum = ownerWeight(a)
 				for g, o in pairs(a.owners) do
