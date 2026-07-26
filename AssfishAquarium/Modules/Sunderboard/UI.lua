@@ -82,7 +82,7 @@ local function showHelpTooltip(anchor)
 	GameTooltip:SetOwner(anchor, "ANCHOR_BOTTOMRIGHT")
 	GameTooltip:AddLine("Sunderboard")
 	GameTooltip:AddLine("Points ~ the extra physical damage each armor debuff let through (mob armor is estimated from level). Bleeds don't count.", 1, 1, 1, true)
-	GameTooltip:AddLine("Left number = landed applications; Sunder split by stacks landed.", 0.8, 0.8, 0.8, true)
+	GameTooltip:AddLine("Left number = landed applications; Sunder split by effective sunders.", 0.8, 0.8, 0.8, true)
 	GameTooltip:Show()
 end
 
