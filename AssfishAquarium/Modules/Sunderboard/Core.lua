@@ -53,6 +53,9 @@ M.session = session
 --                 sourceGUID, sourceName, class,   -- single-caster debuffs
 --                 owners = { [guid] = {name,class,stacks} } }  -- sunder only
 local tracked = {}
+-- Estimated base armor per target, kept SEPARATE from `tracked` (which onDamage iterates with
+-- pairs()) so a cached scalar never lands among the auraState tables. [destGUID] = armor number.
+local baseArmorCache = {}
 
 -- ---------------------------------------------------------------- helpers --
 
@@ -243,7 +246,7 @@ local function removeAura(destGUID, destName, def)
 	if a then
 		notifyFalloff(a, destName)
 		td[def.key] = nil
-		if not next(td) then tracked[destGUID] = nil end
+		if not next(td) then tracked[destGUID] = nil; baseArmorCache[destGUID] = nil end
 	end
 end
 
@@ -255,7 +258,7 @@ local function doseDown(destGUID, def, newStacks)
 	a.stacks = newStacks or 0
 	if a.stacks <= 0 then
 		td[def.key] = nil
-		if not next(td) then tracked[destGUID] = nil end
+		if not next(td) then tracked[destGUID] = nil; baseArmorCache[destGUID] = nil end
 	end
 end
 
@@ -282,10 +285,11 @@ end
 -- Estimated base armor (no debuffs) for a target, cached on its tracked entry. Prefer an NPC-id
 -- override; else read the mob's level if it happens to be your target/mouseover (cache only a
 -- real level -- an unknown one defaults to 63 but stays refreshable as you target the mob).
-local function resolveBaseArmor(destGUID, td)
-	if td.baseArmor then return td.baseArmor end
+local function resolveBaseArmor(destGUID)
+	local cached = baseArmorCache[destGUID]
+	if cached then return cached end
 	local override = D.ARMOR_OVERRIDE[D.NpcId(destGUID) or 0]
-	if override then td.baseArmor = override; return override end
+	if override then baseArmorCache[destGUID] = override; return override end
 	local lvl
 	if UnitExists("target") and UnitGUID("target") == destGUID then
 		lvl = UnitLevel("target")
@@ -293,10 +297,10 @@ local function resolveBaseArmor(destGUID, td)
 		lvl = UnitLevel("mouseover")
 	end
 	if lvl and lvl > 0 then
-		td.baseArmor = D.BaseArmorForLevel(lvl)
-		return td.baseArmor
+		baseArmorCache[destGUID] = D.BaseArmorForLevel(lvl)
+		return baseArmorCache[destGUID]
 	end
-	return D.BaseArmorForLevel(nil) -- unknown level -> assume a level-63 raid mob (3731)
+	return D.BaseArmorForLevel(nil) -- unknown level -> assume a level-63 raid mob (3731); don't cache
 end
 
 local function onDamage(destGUID, amount)
@@ -314,7 +318,7 @@ local function onDamage(destGUID, amount)
 	-- Marginal model: `amount` landed at the SOFTENED armor (base - removed). Compare to the same
 	-- hit at full base armor to get the EXTRA damage the debuffs enabled. With m(A) = K/(A+K),
 	-- extra = amount * (1 - m(base)/m(softened)) = amount * (1 - (softened+K)/(base+K)).
-	local base = resolveBaseArmor(destGUID, td)
+	local base = resolveBaseArmor(destGUID)
 	local softened = base - removed
 	if softened < 0 then softened = 0 end
 	local K = D.ATTACKER_K
@@ -418,6 +422,7 @@ end
 function Core:Reset()
 	wipe(session.points)
 	wipe(tracked)
+	wipe(baseArmorCache)
 	if M.db and M.db.session then M.db.session.label = session.label end
 	if M.UI then M.UI:Refresh() end
 end
@@ -451,10 +456,21 @@ local function updateSession(quiet)
 	local name, instanceType, _, _, _, _, _, instanceID = GetInstanceInfo()
 	local inInstance = (instanceType ~= "none")
 
-	-- SCORING only counts armor reduction while inside a dungeon/raid instance.
-	session.active = (instanceType == "party" or instanceType == "raid")
-	-- The WINDOW shows whenever you're grouped (party or raid) or in an instance.
-	session.visible = IsInGroup() or inInstance
+	-- Scope (M.db.settings.scope) decides where the board scores AND shows:
+	--   "group" (default) = whenever you're in a party/raid (or any instance)
+	--   "instance"        = only inside a dungeon/raid instance
+	--   "always"          = everywhere, even solo in the open world
+	local scope = (M.db.settings and M.db.settings.scope) or "group"
+	local on
+	if scope == "always" then
+		on = true
+	elseif scope == "instance" then
+		on = (instanceType == "party" or instanceType == "raid")
+	else -- "group"
+		on = IsInGroup() or inInstance
+	end
+	session.active = on   -- SCORING gate
+	session.visible = on  -- WINDOW gate (when locked; unlocked always shows for positioning)
 
 	-- The reset prompt is still keyed to entering a different raid INSTANCE
 	-- (a genuinely new raid), not to roster changes.
@@ -493,6 +509,7 @@ local function initDB()
 	db.settings = db.settings or {}
 	if db.settings.notifyFalloff == nil then db.settings.notifyFalloff = "mine" end  -- mine|all|off
 	if db.settings.falloffMinUptime == nil then db.settings.falloffMinUptime = 3 end
+	if db.settings.scope == nil then db.settings.scope = "group" end  -- group|instance|always
 	db.session = db.session or { points = {}, instanceID = nil, label = nil }
 	db.session.points = db.session.points or {}
 
@@ -544,6 +561,7 @@ function M.Disable()
 	if liveEvents then liveEvents:UnregisterAllEvents() end
 	if M.UI then M.UI:Hide() end
 	wipe(tracked)
+	wipe(baseArmorCache)
 end
 
 -- Tri-state display: "hidden" is handled by core via Disable; here we only apply

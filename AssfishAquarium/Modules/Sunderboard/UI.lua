@@ -265,18 +265,23 @@ function M.BuildSettings(panel)
 
 	core.DisplayControl(panel, 14, -40, M) -- shared Hidden / Unlocked / Locked tri-state
 
-	syncs[#syncs + 1] = W.radioRow(panel, 14, -74, "Fall-off alerts:",
+	syncs[#syncs + 1] = W.radioRow(panel, 14, -74, "Show:",
+		{ { text = "Group", value = "group" }, { text = "Instance", value = "instance" }, { text = "Always", value = "always" } },
+		function() return M.db.settings.scope or "group" end,
+		function(v) M.db.settings.scope = v; if M.UpdateSession then M.UpdateSession() end end).sync
+
+	syncs[#syncs + 1] = W.radioRow(panel, 14, -104, "Fall-off alerts:",
 		{ { text = "Mine", value = "mine" }, { text = "All", value = "all" }, { text = "Off", value = "off" } },
 		function() return M.db.settings.notifyFalloff or "mine" end,
 		function(v) M.db.settings.notifyFalloff = v end).sync
 
-	syncs[#syncs + 1] = W.slider(panel, 14, -110, "Fall-off min uptime (s)", 0, 10, 1,
+	syncs[#syncs + 1] = W.slider(panel, 14, -140, "Fall-off min uptime (s)", 0, 10, 1,
 		function() return M.db.settings.falloffMinUptime or 3 end,
 		function(v) M.db.settings.falloffMinUptime = v end).sync
 
 	local reset = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	reset:SetSize(160, 22)
-	reset:SetPoint("TOPLEFT", 14, -158)
+	reset:SetPoint("TOPLEFT", 14, -188)
 	reset:SetText("Reset leaderboard")
 	reset:SetScript("OnClick", function()
 		M.Core:Reset()
@@ -284,11 +289,11 @@ function M.BuildSettings(panel)
 	end)
 
 	local note = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-	note:SetPoint("TOPLEFT", 14, -190)
+	note:SetPoint("TOPLEFT", 14, -220)
 	note:SetPoint("RIGHT", panel, "RIGHT", -14, 0)
 	note:SetJustifyH("LEFT")
 	note:SetWordWrap(true)
-	note:SetText("Scores physical damage dealt through armor debuffs (Sunder / Expose / Faerie Fire / Curse of Recklessness). Only counts inside a dungeon or raid.")
+	note:SetText("Scores physical damage dealt through armor debuffs (Sunder / Expose / Faerie Fire / Curse of Recklessness). Use Show to choose where it runs: while grouped, only in an instance, or always.")
 
 	local function refresh() for _, s in ipairs(syncs) do s() end end
 	panel.refresh = refresh
