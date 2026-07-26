@@ -37,12 +37,7 @@ local COLUMN_CLASSES = {
 local OPT_H = 280 -- vertical space the per-window options block takes atop the gear list
 local sliderSeq = 0 -- for unique slider frame names
 local BAR_TEX = "Interface\\TargetingFrame\\UI-StatusBar"
-local BACKDROP = {
-	bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
-	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-	tile = true, tileSize = 16, edgeSize = 12,
-	insets = { left = 3, right = 3, top = 3, bottom = 3 },
-}
+local BACKDROP = core.WINDOW_BACKDROP
 
 M.windows = M.windows or {}
 

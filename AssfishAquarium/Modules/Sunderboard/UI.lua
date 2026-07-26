@@ -108,8 +108,8 @@ end
 local function createRow(i)
 	local bar = CreateFrame("StatusBar", nil, frame)
 	bar:SetStatusBarTexture(BAR_TEX)
-	bar:SetSize(WIDTH - 8, ROW_H - 2)
-	bar:SetPoint("TOPLEFT", frame, "TOPLEFT", 4, -(TOPPAD + (i - 1) * ROW_H))
+	bar:SetSize(WIDTH - 12, ROW_H - 2)
+	bar:SetPoint("TOPLEFT", frame, "TOPLEFT", 6, -(TOPPAD + (i - 1) * ROW_H))
 
 	local bg = bar:CreateTexture(nil, "BACKGROUND")
 	bg:SetAllPoints(bar)
@@ -140,13 +140,8 @@ function UI:Build()
 
 	frame = CreateFrame("Frame", "SunderboardFrame", UIParent, "BackdropTemplate")
 	frame:SetSize(WIDTH, TOPPAD + ROW_H + BOTPAD)
-	frame:SetBackdrop({
-		bgFile = "Interface\\Buttons\\WHITE8x8",
-		edgeFile = "Interface\\Buttons\\WHITE8x8",
-		edgeSize = 1,
-	})
-	frame:SetBackdropColor(0, 0, 0, 0.82)
-	frame:SetBackdropBorderColor(0, 0, 0, 1)
+	frame:SetBackdrop(core.WINDOW_BACKDROP) -- shared dark-parchment window (like FF Tracker / Mobber)
+	frame:SetBackdropColor(0, 0, 0, 0.85)
 	frame:SetMovable(true)
 	frame:EnableMouse(true)
 	frame:RegisterForDrag("LeftButton")
@@ -155,20 +150,14 @@ function UI:Build()
 	frame:SetScript("OnDragStop", function(s) s:StopMovingOrSizing(); UI:SavePos() end)
 	restorePos()
 
-	-- title bar
-	local strip = frame:CreateTexture(nil, "ARTWORK")
-	strip:SetPoint("TOPLEFT", 1, -1)
-	strip:SetPoint("TOPRIGHT", -1, -1)
-	strip:SetHeight(TOPPAD - 2)
-	strip:SetColorTexture(0.5, 0.19, 0.0, 0.9)  -- burnt orange
-
+	-- header: title + buttons sit on the backdrop, no coloured title strip
 	header = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-	header:SetPoint("LEFT", strip, "LEFT", 6, 0)
+	header:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -7)
 	header:SetText("Sunderboard")
 
 	-- X: turn the whole module off (the umbrella's master switch = hidden state).
 	local close = makeTextButton(frame, "X", "Turn Sunderboard off")
-	close:SetPoint("RIGHT", strip, "RIGHT", -4, 0)
+	close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -8, -5)
 	close:SetScript("OnClick", function() core.SetModuleState("sb", "hidden") end)
 
 	local reset = makeTextButton(frame, "R", "Reset the leaderboard")

@@ -8,6 +8,15 @@
 local ADDON, ns = ...
 local core = ns.core
 
+-- The shared window backdrop used by every module window (dark parchment + tooltip border).
+-- Apply with frame:SetBackdrop(core.WINDOW_BACKDROP); frame:SetBackdropColor(0, 0, 0, 0.85).
+core.WINDOW_BACKDROP = {
+	bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
+	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+	tile = true, tileSize = 16, edgeSize = 12,
+	insets = { left = 3, right = 3, top = 3, bottom = 3 },
+}
+
 -- Trim the built-in transparent border off a WoW icon texture.
 function core.CropIcon(tex)
 	tex:SetTexCoord(0.08, 0.92, 0.08, 0.92)

@@ -29,12 +29,7 @@ local GAP, HDR_H, BLOCK_GAP, PAD = 2, 15, 8, 6 -- slot gap / header height / gap
 local DEFAULT_SLOT, MIN_SLOT, MAX_SLOT, SLOT_STEP = 24, 20, 60, 4 -- icon-size slider bounds
 local MAX_GHOSTS = 16                   -- cap on lingering fallen-off "0" cells shown per mob
 
-local BACKDROP = {
-	bgFile   = "Interface\\DialogFrame\\UI-DialogBox-Background",
-	edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-	tile = true, tileSize = 16, edgeSize = 12,
-	insets = { left = 3, right = 3, top = 3, bottom = 3 },
-}
+local BACKDROP = core.WINDOW_BACKDROP
 local SLOT_BACKDROP = {
 	bgFile = "Interface\\Buttons\\WHITE8x8", edgeFile = "Interface\\Buttons\\WHITE8x8", edgeSize = 1,
 }
