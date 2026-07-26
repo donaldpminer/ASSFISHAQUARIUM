@@ -3,7 +3,7 @@
 
 	Replaces the standalone options window (which was opened by the old minimap
 	button). Uses the shared core widgets. Sections:
-	  * Display tri-state (Hidden / Unlocked / Locked) via core.DisplayControl.
+	  * Display tri-state (Disabled / Unlocked / Locked) via core.DisplayControl.
 	  * Windfury announcements checkbox -> toggles the always-on SERVICE live
 	    (core.GetDB("bb").windfury, default ON) via M.WF_SetEnabled.
 	  * Heal Tracker: Enabled, amount-side layout, size.

@@ -649,8 +649,8 @@ StaticPopupDialogs["MOBBER_RESET_DEFAULTS"] = {
 -- Core/Lib_Widgets.lua as core.widgets; addOptionControls below uses `W` for them.)
 
 -- Populate the main option controls onto frame `p` (no window chrome). Returns refresh().
--- Native-style checkboxes / radios so all options are visible at once. Shared by the
--- native Settings canvas and the fallback window.
+-- Native-style checkboxes / radios so all options are visible at once. Rendered into the
+-- shared Assfish Aquarium Settings canvas.
 local function addOptionControls(p)
 	local syncs = {}
 	local function check(x, y, label, get, set)
@@ -662,7 +662,7 @@ local function addOptionControls(p)
 	title:SetText("Mobber")
 	title:SetTextColor(1, 0.82, 0)
 
-	core.DisplayControl(p, 14, -40, M) -- shared Hidden / Unlocked / Locked tri-state
+	core.DisplayControl(p, 14, -40, M) -- shared Disabled / Unlocked / Locked tri-state
 	check(14, -66, "Only show in raids", function() return M.db.raidOnly ~= false end,
 		function(v) M.db.raidOnly = v; M.Rebuild() end)
 
@@ -709,7 +709,7 @@ local function addOptionControls(p)
 		M.Rebuild()
 	end)
 
-	check(14, -290, "Test bars (preview)", function() return M.testMode end,
+	check(14, -290, "Test mobs (preview)", function() return M.testMode end,
 		function(v) if M.SetTestMode then M.SetTestMode(v) end end)
 
 	local blBtn = CreateFrame("Button", nil, p, "UIPanelButtonTemplate")

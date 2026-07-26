@@ -30,10 +30,10 @@ local dirty, elapsed = false, 0
 -- Display only: abbreviate the raw points (~ extra physical damage enabled) with K / M so big
 -- raid totals stay readable. Sorting + bar length use the raw p.total, never this string.
 local function fmt(n)
-	if n >= 1e6 then
-		return string.format(n >= 1e7 and "%.0fM" or "%.1fM", n / 1e6)
-	elseif n >= 1e3 then
-		return string.format(n >= 1e4 and "%.0fK" or "%.1fK", n / 1e3)
+	if n >= 1e3 then
+		local v, suffix = n / 1e3, "K"
+		if v >= 999.5 then v, suffix = v / 1e3, "M" end -- would round to "1000K" -> show as M
+		return string.format(v >= 10 and "%.0f%s" or "%.1f%s", v, suffix)
 	end
 	return string.format("%d", n + 0.5)
 end

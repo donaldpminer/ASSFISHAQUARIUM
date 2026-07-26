@@ -11,7 +11,7 @@
 	    for a mob you can see: real durations for the swipe, plus HP / marker / level.
 
 	Rows persist while a mob has a debuff or is visible; a dead mob keeps its row
-	(skull, dimmed) until you leave combat. No curated spell list -- every harmful
+	(skull, dimmed) for a few seconds (DEAD_TTL) or until you leave combat. No curated spell list -- every harmful
 	aura shows. Timers need the mob to be scannable (targeted / moused / nameplated);
 	turn enemy nameplates on for timers on everything you can see.
 ----------------------------------------------------------------------------]]

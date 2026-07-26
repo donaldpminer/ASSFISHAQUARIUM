@@ -4,7 +4,7 @@
 	One native Settings page (Options -> AddOns -> Assfish Aquarium) with a
 	subcategory per module. The parent page just enables/disables each tool; each
 	module's own page (built by its BuildSettings) holds that tool's controls plus
-	a shared Display tri-state (Hidden / Unlocked / Locked).
+	a shared Display tri-state (Disabled / Unlocked / Locked).
 
 	Feature-detected: on the modern client the native Settings API is used; if it's
 	absent the modules simply have no settings screen (reachable state is still fully
@@ -24,7 +24,7 @@ function core.RefreshSettingsUI()
 	for _, fn in ipairs(settingsSyncs) do fn() end
 end
 
--- A Display tri-state (Hidden/Unlocked/Locked) a module drops into its own panel wherever
+-- A Display tri-state (Disabled/Unlocked/Locked) a module drops into its own panel wherever
 -- it likes; drives core.SetModuleState. Returns the radio row.
 function core.DisplayControl(panel, x, y, M)
 	local row = W.radioRow(panel, x, y, "Display:",

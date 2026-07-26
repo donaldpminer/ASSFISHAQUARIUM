@@ -16,6 +16,7 @@
 	Window state lives in M.db.windows[i]:
 	  { point, width, locked, growUp, rightAlign, rowScale, fontSize,
 	    barMax (seconds, nil = longest), onlyMine, sound5/soundExpire (+ *Id),
+	    allEnemyDebuffs, groupByTarget, iconGrid, configPoint,
 	    spells = { [key] = { enabled, color } } }
 ----------------------------------------------------------------------------]]
 
