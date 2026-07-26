@@ -1,0 +1,10 @@
+# Python build tooling (carried over from the source addons)
+__pycache__/
+*.pyc
+dist/
+*.zip
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp

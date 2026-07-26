@@ -1,0 +1,13 @@
+## Interface: 11509
+## Title: Assfish Aquarium
+## Notes: Umbrella for Donald's Classic Era addons (Mobber, FF Tracker, Sunderboard, ButtBass) with unified options and one minimap button.
+## Author: donaldpminer
+## Version: 0.1.0
+## SavedVariables: AssfishAquariumDB
+## SavedVariablesPerCharacter: AssfishAquariumCharDB
+## IconTexture: Interface\Icons\INV_Misc_Fish_24
+
+# --- shared core (loads first) ---
+Core\Core.lua
+
+# --- modules (added as they are integrated) ---
