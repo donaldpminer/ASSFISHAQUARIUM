@@ -996,6 +996,7 @@ function Window:ToggleConfig()
 		self.configPanel:Hide()
 	else
 		self:RenderConfig()
+		self:ApplyConfigPos()
 		self.configPanel:Show()
 	end
 end
@@ -1193,18 +1194,60 @@ function Window:Destroy()
 end
 
 -- --------------------------------------------------------------------------
+-- Remember where the (large) config panel was dragged to, per window, in cfg so it
+-- survives reload. Stored as TOPLEFT relative to UIParent's BOTTOMLEFT.
+function Window:SaveConfigPos()
+	local panel = self.configPanel
+	if not panel then return end
+	local left, top = panel:GetLeft(), panel:GetTop()
+	if not left or not top then return end
+	self.cfg.configPoint = { x = left, y = top }
+end
+
+-- Position the config panel as an independent window: at its saved spot, else just below the
+-- display window on first open (an absolute anchor, so it does NOT follow the window afterward).
+function Window:ApplyConfigPos()
+	local panel = self.configPanel
+	if not panel then return end
+	panel:ClearAllPoints()
+	local p = self.cfg.configPoint
+	if p and p.x and p.y then
+		panel:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", p.x, p.y)
+		return
+	end
+	local f = self.frame
+	local left, bottom = f:GetLeft(), f:GetBottom()
+	if left and bottom then
+		panel:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", left, bottom - 4)
+	else
+		panel:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+	end
+end
+
 local function buildConfigPanel(self)
-	-- Parented to UIParent (not the window) so the per-window Size option doesn't
-	-- blow the config panel up too; still anchored just under the window.
+	-- Its OWN standalone, draggable window -- NOT anchored to the display window, so moving the
+	-- tracker doesn't drag the (large) config panel with it and vice-versa. Positioned by
+	-- ApplyConfigPos on open (near the window first time; remembers where you drag it).
 	local panel = CreateFrame("Frame", nil, UIParent, "BackdropTemplate")
 	self.configPanel = panel
-	panel:SetPoint("TOPLEFT", self.frame, "BOTTOMLEFT", 0, -2)
 	panel:SetSize(200, 200) -- resized to fit the 3 columns in RenderConfig
 	panel:SetBackdrop(BACKDROP)
 	panel:SetBackdropColor(0, 0, 0, 0.92)
 	panel:SetFrameStrata("DIALOG")
 	panel:SetClampedToScreen(true)
+	panel:SetMovable(true)
+	panel:EnableMouse(true)
 	panel:Hide()
+
+	-- Draggable title bar across the top (leaves room for the close X on the right).
+	local dragBar = CreateFrame("Frame", nil, panel)
+	dragBar:SetPoint("TOPLEFT", 0, 0)
+	dragBar:SetPoint("TOPRIGHT", -24, 0)
+	dragBar:SetHeight(PAD + 16)
+	dragBar:EnableMouse(true)
+	dragBar:RegisterForDrag("LeftButton")
+	dragBar:SetScript("OnDragStart", function() panel:StartMoving() end)
+	dragBar:SetScript("OnDragStop", function() panel:StopMovingOrSizing(); self:SaveConfigPos() end)
 
 	-- Per-window options block across the top of the panel (this window only).
 	local opt = {}
