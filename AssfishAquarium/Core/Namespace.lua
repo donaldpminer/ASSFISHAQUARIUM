@@ -52,7 +52,9 @@ function core.RegisterModule(spec)
 	end
 	M.title = spec.title or spec.key
 	M.perChar = spec.perChar and true or false
-	M.default = (spec.default ~= false)
+	-- default may be a boolean OR a function evaluated at first-run seed time (login) -- e.g.
+	-- a module that should default on only for a given class checks UnitClass then. nil => true.
+	if spec.default == nil then M.default = true else M.default = spec.default end
 	M.Enable = spec.Enable
 	M.Disable = spec.Disable
 	M.SetDisplayState = spec.SetDisplayState
@@ -166,7 +168,9 @@ function core.GetModuleState(key) -- "hidden" | "unlocked" | "locked"
 	local st = stateStore()[key]
 	if st == "unlocked" or st == "locked" or st == "hidden" then return st end
 	local M = ns.modules[key]
-	return (M and M.default) and "unlocked" or "hidden" -- seed from default on first run
+	local def = M and M.default
+	if type(def) == "function" then def = def() end -- class-conditional defaults resolve here
+	return def and "unlocked" or "hidden" -- seed from default on first run
 end
 
 function core.SetModuleState(key, state)

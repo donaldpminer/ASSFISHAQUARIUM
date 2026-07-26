@@ -590,7 +590,7 @@ function M.WFDisplay_Init()
 	frame.label = frame:CreateFontString(nil, "OVERLAY")
 	frame.label:SetFont(STANDARD_TEXT_FONT, 11, "OUTLINE")
 	frame.label:SetPoint("BOTTOM", frame, "TOP", 0, 4)
-	frame.label:SetText("ButtBass party - drag to move")
+	frame.label:SetText("Shaman Stuff party - drag to move")
 	frame.label:Hide()
 
 	-- header totem-duration timers, one per column

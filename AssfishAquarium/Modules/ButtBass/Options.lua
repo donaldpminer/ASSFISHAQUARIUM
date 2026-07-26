@@ -23,7 +23,7 @@ function M.BuildSettings(panel)
 
 	local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", 14, -16)
-	title:SetText("ButtBass")
+	title:SetText("Shaman Stuff")
 	title:SetTextColor(1, 0.82, 0)
 
 	core.DisplayControl(panel, 14, -46, M) -- shared Hidden / Unlocked / Locked tri-state
@@ -35,7 +35,7 @@ function M.BuildSettings(panel)
 		function(v) if M.WF_SetEnabled then M.WF_SetEnabled(v) end end))
 	local wfNote = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
 	wfNote:SetPoint("TOPLEFT", 40, -98)
-	wfNote:SetText("Runs for all classes, even while ButtBass is hidden.")
+	wfNote:SetText("Runs for all classes, even while Shaman Stuff is disabled.")
 
 	-- ===== Heal Tracker =====
 	local h1 = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")

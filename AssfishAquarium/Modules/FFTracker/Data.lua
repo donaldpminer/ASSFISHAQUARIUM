@@ -1,7 +1,9 @@
--- AUTO-GENERATED from spells.json by gen_data.py - do not edit by hand.
--- Edit spells.json and re-run `python gen_data.py` (or package_addon.py).
---
--- Detection is by aura NAME (rank-agnostic); `ids` gives the icon + a fallback.
+-- Spell data for the FF Tracker module (originally AUTO-GENERATED from spells.json by
+-- gen_data.py). The module header below (local core / RegisterModule) and the M.* prefix
+-- were added by hand when FF Tracker was bundled into Assfish Aquarium. NOTE: the upstream
+-- gen_data.py still emits `ns.*`, so a regen must be re-adapted (add the two header lines and
+-- rename ns.* -> M.*) before replacing this file. Detection is by aura NAME (rank-agnostic);
+-- `ids` gives the icon + a fallback.
 
 local ADDON, ns = ...
 local core = ns.core

@@ -336,7 +336,7 @@ function M.Display_Init()
 	frame.label = frame:CreateFontString(nil, "OVERLAY")
 	frame.label:SetFont(STANDARD_TEXT_FONT, 11, "OUTLINE")
 	frame.label:SetPoint("BOTTOM", frame, "TOP", 0, 3)
-	frame.label:SetText("ButtBass heals - drag to move")
+	frame.label:SetText("Shaman Stuff heals - drag to move")
 	frame.label:Hide()
 
 	slots = {}

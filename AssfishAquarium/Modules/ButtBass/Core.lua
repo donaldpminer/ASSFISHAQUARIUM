@@ -19,7 +19,12 @@
 
 local ADDON, ns = ...
 local core = ns.core
-local M = core.RegisterModule({ key = "bb", title = "ButtBass", perChar = true, default = true })
+-- Display name is "Shaman Stuff"; the internal key stays "bb". Enabled by default only on
+-- Shamans (the class check runs at first-run seed time, i.e. login, when the class is known).
+local M = core.RegisterModule({
+	key = "bb", title = "Shaman Stuff", perChar = true,
+	default = function() return select(2, UnitClass("player")) == "SHAMAN" end,
+})
 
 --------------------------------------------------------------------------------
 -- Config
@@ -62,7 +67,7 @@ local cast = nil
 -- Helpers
 --------------------------------------------------------------------------------
 local function printMsg(msg)
-	DEFAULT_CHAT_FRAME:AddMessage("|cff66ccffButtBass|r: " .. msg)
+	DEFAULT_CHAT_FRAME:AddMessage("|cff66ccffShaman Stuff|r: " .. msg)
 end
 
 -- Resolve a spell's icon across the retail/Classic API split; `fallback` when the
@@ -326,7 +331,7 @@ function M.OnSlash(msg)
 	elseif cmd == "wf" then
 		local all = M.WF_GetAll and M.WF_GetAll() or {}
 		if #all == 0 then
-			printMsg("no Windfury heard yet (need a group with WF Now / ButtBass users).")
+			printMsg("no Windfury heard yet (need a group with WF Now / Shaman Stuff users).")
 		else
 			printMsg("Windfury status heard (" .. #all .. "):")
 			for _, e in ipairs(all) do

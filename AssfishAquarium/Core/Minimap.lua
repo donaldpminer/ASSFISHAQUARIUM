@@ -17,7 +17,7 @@ local RADIUS = 80
 local button, dropdown
 
 local STATE_COLOR = {
-	hidden   = { 0.6, 0.6, 0.6, "hidden" },
+	hidden   = { 0.6, 0.6, 0.6, "disabled" },
 	unlocked = { 1, 0.82, 0, "unlocked" },
 	locked   = { 0.4, 1, 0.4, "locked" },
 }

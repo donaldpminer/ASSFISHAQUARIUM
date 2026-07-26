@@ -28,7 +28,7 @@ end
 -- it likes; drives core.SetModuleState. Returns the radio row.
 function core.DisplayControl(panel, x, y, M)
 	local row = W.radioRow(panel, x, y, "Display:",
-		{ { text = "Hidden", value = "hidden" }, { text = "Unlocked", value = "unlocked" }, { text = "Locked", value = "locked" } },
+		{ { text = "Disabled", value = "hidden" }, { text = "Unlocked", value = "unlocked" }, { text = "Locked", value = "locked" } },
 		function() return core.GetModuleState(M.key) end,
 		function(v) core.SetModuleState(M.key, v) end)
 	settingsSyncs[#settingsSyncs + 1] = row.sync
