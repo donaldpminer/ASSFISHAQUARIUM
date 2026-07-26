@@ -624,8 +624,8 @@ function M.OnSlash(msg)
 		M.AddWindow()
 	elseif msg == "options" or msg == "opt" or msg == "config" then
 		core.OpenSettings()
-	else -- bare /fft toggles the lock, routed through core so the state store stays in sync
+	else -- bare /fft toggles lock; from disabled it reveals into unlocked (a usable state)
 		local s = core.GetModuleState("ff")
-		core.SetModuleState("ff", s == "locked" and "unlocked" or "locked")
+		core.SetModuleState("ff", s == "unlocked" and "locked" or "unlocked")
 	end
 end

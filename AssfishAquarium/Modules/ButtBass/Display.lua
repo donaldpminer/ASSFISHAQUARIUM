@@ -425,6 +425,7 @@ end
 
 -- /bb test - fabricate a cast (with fake names + health) to preview the animation.
 function M.Display_Test(n)
+	if not active then return end -- ignore /bb test while the module is disabled
 	if not frame then M.Display_Init() end
 	if n == nil then n = math.random(1, NUM_SLOTS) end
 	n = math.max(1, math.min(NUM_SLOTS, math.floor(n)))

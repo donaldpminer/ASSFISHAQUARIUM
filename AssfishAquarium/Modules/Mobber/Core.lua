@@ -747,6 +747,7 @@ end
 function M.Enable()
 	playerGUID = UnitGUID("player")
 	refreshInRaid()
+	if M.testMode then M.SetTestMode(false) end -- don't inherit a preview toggled on while disabled
 	if M.BuildWindow then M.BuildWindow() end
 	if not liveEvents then
 		liveEvents = CreateFrame("Frame")
@@ -791,8 +792,8 @@ function M.OnSlash(msg)
 		if M.ToggleWatchPanel then M.ToggleWatchPanel() end
 	elseif msg == "options" or msg == "opt" or msg == "config" then
 		core.OpenSettings()
-	else -- bare /mob toggles the lock, routed through core so the state store stays in sync
+	else -- bare /mob toggles lock; from disabled it reveals into unlocked (a usable state)
 		local s = core.GetModuleState("mob")
-		core.SetModuleState("mob", s == "locked" and "unlocked" or "locked")
+		core.SetModuleState("mob", s == "unlocked" and "locked" or "unlocked")
 	end
 end

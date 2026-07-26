@@ -466,6 +466,9 @@ local function initDB()
 	session.instanceID = db.session.instanceID
 	session.label = db.session.label
 end
+-- Exposed so the settings page can seed the DB even while the module is disabled (BuildSettings
+-- runs at login before Enable). Idempotent.
+M.InitDB = initDB
 
 -- --------------------------------------------------------------- lifecycle --
 -- Sunderboard's non-combat-log events live on a module-owned frame so Disable can

@@ -93,7 +93,7 @@ core.RefreshMinimap = refreshDropdown -- Namespace calls this on any state chang
 local function buildDropdown()
 	dropdown = CreateFrame("Frame", "AssfishMinimapDropdown", UIParent, "BackdropTemplate")
 	dropdown:SetWidth(150)
-	dropdown:SetFrameStrata("DIALOG")
+	dropdown:SetFrameStrata("FULLSCREEN_DIALOG")
 	dropdown:SetClampedToScreen(true)
 	dropdown:SetBackdrop({
 		bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
@@ -105,8 +105,17 @@ local function buildDropdown()
 	bg:SetPoint("TOPLEFT", 3, -3); bg:SetPoint("BOTTOMRIGHT", -3, 3)
 	bg:SetColorTexture(0.03, 0.03, 0.04, 1)
 	dropdown:Hide()
-	-- close when clicking elsewhere
-	dropdown:SetScript("OnShow", function(self) self.t = 0 end)
+
+	-- Dismiss on a click anywhere outside the menu: a transparent fullscreen catcher sits at a
+	-- lower strata (below the dropdown, above the rest of the UI); clicking it closes the menu.
+	local catcher = CreateFrame("Button", nil, UIParent)
+	catcher:SetAllPoints(UIParent)
+	catcher:SetFrameStrata("FULLSCREEN")
+	catcher:EnableMouse(true)
+	catcher:Hide()
+	catcher:SetScript("OnClick", function() dropdown:Hide() end)
+	dropdown:SetScript("OnShow", function() catcher:Show() end)
+	dropdown:SetScript("OnHide", function() catcher:Hide() end)
 end
 
 local function toggleDropdown()

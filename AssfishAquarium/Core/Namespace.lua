@@ -186,10 +186,15 @@ function core.SetModuleState(key, state)
 		end
 	else
 		if not M._enabled then
-			core.SafeCall(key .. ":Enable", M.Enable, M)
-			M._enabled = true
+			-- Only mark enabled if Enable actually succeeded (or there's no Enable hook), so a
+			-- module whose Enable errored is left consistent and gets retried next time.
+			local ok = true
+			if M.Enable then ok = core.SafeCall(key .. ":Enable", M.Enable, M) end
+			M._enabled = ok and true or false
 		end
-		core.SafeCall(key .. ":SetDisplayState", M.SetDisplayState, M, state)
+		if M._enabled then
+			core.SafeCall(key .. ":SetDisplayState", M.SetDisplayState, M, state)
+		end
 	end
 	stateStore()[key] = state
 	if core.RefreshMinimap then core.RefreshMinimap() end

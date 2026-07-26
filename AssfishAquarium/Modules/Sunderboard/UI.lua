@@ -255,6 +255,7 @@ end
 -- Fill the shared Settings canvas with Sunderboard's controls (core registers the
 -- subcategory + calls this). Replaces the standalone addon's own options screen.
 function M.BuildSettings(panel)
+	if M.InitDB then M.InitDB() end -- ensure M.db.settings exists (this runs at login, before Enable)
 	local syncs = {}
 
 	local title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")

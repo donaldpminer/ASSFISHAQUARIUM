@@ -379,8 +379,11 @@ end
 --------------------------------------------------------------------------------
 -- ticker
 --------------------------------------------------------------------------------
+local active = false -- module enabled? gates refresh so a settings toggle can't show the frame while disabled
+
 local function refresh()
 	if not frame then return end
+	if not active then frame:Hide(); wfWasPresent = false; return end
 	if M.db.wfEnabled == false then frame:Hide(); wfWasPresent = false; return end
 	frame:Show()
 	if not M.db.locked then renderPreview(); wfWasPresent = false; return end
@@ -642,6 +645,7 @@ end
 -- Start the refresh ticker + first roster assignment (module enabled). The ticker is
 -- created via core.NewTicker so the core cancels it on Disable.
 function M.WFDisplay_Enable()
+	active = true
 	if not frame then return end
 	M.WFDisplay_ApplyScale()
 	M.WFDisplay_ApplyPosition()
@@ -652,6 +656,7 @@ end
 
 -- Hide the frame (never delete it) + stop the ticker so a stray tick can't re-show it.
 function M.WFDisplay_Disable()
+	active = false
 	if ticker then ticker:Cancel(); ticker = nil end
 	if frame then frame:Hide() end
 	wfWasPresent = false

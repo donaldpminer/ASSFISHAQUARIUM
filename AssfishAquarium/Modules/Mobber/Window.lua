@@ -97,6 +97,7 @@ local function anchorCorner()
 end
 
 local function applyPos()
+	if not win then return end -- settings controls can fire while the module is disabled (no window yet)
 	win:ClearAllPoints()
 	local p = M.db.point
 	if p and p.corner and p.x and p.y then
@@ -107,6 +108,7 @@ local function applyPos()
 end
 
 local function savePos()
+	if not win then return end
 	local corner = anchorCorner()
 	local l, b, w, h = win:GetLeft(), win:GetBottom(), win:GetWidth(), win:GetHeight()
 	if not l then return end
@@ -118,6 +120,7 @@ end
 -- Re-pin at the current fixed corner keeping the same screen rectangle (used when a
 -- grow direction flips so the window doesn't jump).
 local function reanchor()
+	if not win then return end
 	local l, b, w, h = win:GetLeft(), win:GetBottom(), win:GetWidth(), win:GetHeight()
 	if not l then applyPos(); return end
 	local corner = anchorCorner()
@@ -615,6 +618,7 @@ end
 
 -- --- lock -------------------------------------------------------------------
 local function applyLock()
+	if not win then return end -- may be called via SetDisplayState/settings before the window exists
 	-- Locked = click-through: don't let the (backgroundless) HUD eat clicks meant for the
 	-- world behind it. Slots are mouse-enabled children, so their tooltips still work.
 	win:EnableMouse(not M.db.locked)
