@@ -434,21 +434,11 @@ local function persist()
 end
 
 StaticPopupDialogs["SUNDERBOARD_RESET"] = {
-	text = "Sunderboard: entered %s. Reset the leaderboard for the new raid?",
+	text = "Sunderboard: joined a new raid group. Reset the leaderboard?",
 	button1 = YES,
 	button2 = NO,
-	OnAccept = function()
-		session.instanceID = M.pendingInstanceID
-		session.label = M.pendingLabel
-		Core:Reset()
-		persist()
-	end,
-	OnCancel = function()
-		-- keep the board, but adopt the new raid so we don't ask again
-		session.instanceID = M.pendingInstanceID
-		session.label = M.pendingLabel
-		persist()
-	end,
+	OnAccept = function() Core:Reset(); persist() end,
+	-- No = keep the board (do nothing).
 	timeout = 0, whileDead = true, hideOnEscape = true, preferredIndex = 3,
 }
 
@@ -472,26 +462,19 @@ local function updateSession(quiet)
 	session.active = on   -- SCORING gate
 	session.visible = on  -- WINDOW gate (when locked; unlocked always shows for positioning)
 
-	-- The reset prompt is still keyed to entering a different raid INSTANCE
-	-- (a genuinely new raid), not to roster changes.
+	-- Ask to reset when you JOIN a raid group (a fresh raid night). The transition guard fires
+	-- once on the not-raid -> raid edge; roster churn and login/reload (quiet) don't prompt.
+	local nowRaid = IsInRaid()
+	if nowRaid and not session.inRaidGroup and not quiet and next(session.points) ~= nil then
+		StaticPopup_Show("SUNDERBOARD_RESET")
+	end
+	session.inRaidGroup = nowRaid
+
+	-- Track the current raid instance name for the header label (display only).
 	if instanceType == "raid" then
-		if session.instanceID == nil then
-			session.instanceID = instanceID
-			session.label = name
-			persist()
-		elseif session.instanceID ~= instanceID then
-			if next(session.points) ~= nil and not quiet then
-				if M.pendingInstanceID == instanceID then return end  -- already asking for this raid
-				M.pendingInstanceID = instanceID
-				M.pendingLabel = name
-				StaticPopup_Show("SUNDERBOARD_RESET", name)
-			else
-				session.instanceID = instanceID
-				session.label = name
-				Core:Reset()
-				persist()
-			end
-		end
+		session.instanceID = instanceID
+		session.label = name
+		persist()
 	end
 
 	if M.UI then M.UI:UpdateVisibility() end
@@ -535,7 +518,7 @@ local function onLiveEvent(_, event, ...)
 	elseif event == "ZONE_CHANGED_NEW_AREA" then
 		updateSession(false)
 	elseif event == "GROUP_ROSTER_UPDATE" then
-		updateSession(true)  -- join/leave raid -> show/hide; never prompt on roster churn
+		updateSession(false)  -- join/leave raid -> visibility + the "joined a raid" reset prompt
 	end
 end
 

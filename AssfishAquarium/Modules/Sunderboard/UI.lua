@@ -77,17 +77,6 @@ local function restorePos()
 	end
 end
 
--- A header letter-button in the shared bundle style (mouse-over highlight), optional tooltip.
-local function makeTextButton(parent, text, tooltip)
-	local b = core.widgets.iconButton(parent, 16, nil, tooltip, nil)
-	local fs = b:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-	fs:SetAllPoints(b)
-	fs:SetJustifyH("CENTER")
-	fs:SetText(text)
-	b:SetFontString(fs)
-	return b
-end
-
 -- The "?" help tooltip: how points are computed + the assumptions behind them.
 local function showHelpTooltip(anchor)
 	GameTooltip:SetOwner(anchor, "ANCHOR_BOTTOMRIGHT")
@@ -155,16 +144,22 @@ function UI:Build()
 	header:SetPoint("TOPLEFT", frame, "TOPLEFT", 10, -7)
 	header:SetText("Sunderboard")
 
-	-- X: turn the whole module off (the umbrella's master switch = hidden state).
-	local close = makeTextButton(frame, "X", "Turn Sunderboard off")
-	close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -8, -5)
+	-- Textured header buttons (matching FF Tracker's icon-button style), not letters.
+	-- X: standard textured close button; turns the module off.
+	local close = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
+	close:SetSize(20, 20)
+	close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -3, -3)
 	close:SetScript("OnClick", function() core.SetModuleState("sb", "hidden") end)
 
-	local reset = makeTextButton(frame, "R", "Reset the leaderboard")
-	reset:SetPoint("RIGHT", close, "LEFT", -2, 0)
-	reset:SetScript("OnClick", function() M.Core:Reset() end)
+	-- R: reset the leaderboard (refresh icon).
+	local reset = W.iconButton(frame, 16, "Interface\\Icons\\Ability_Hunter_Readiness",
+		"Reset the leaderboard", function() M.Core:Reset() end)
+	core.CropIcon(reset:GetNormalTexture())
+	reset:SetPoint("RIGHT", close, "LEFT", 0, 0)
 
-	local help = makeTextButton(frame, "?")
+	-- ?: how scoring works (question-mark icon).
+	local help = W.iconButton(frame, 16, "Interface\\Icons\\INV_Misc_QuestionMark", nil, nil)
+	core.CropIcon(help:GetNormalTexture())
 	help:SetPoint("RIGHT", reset, "LEFT", -2, 0)
 	help:SetScript("OnEnter", function(self) showHelpTooltip(self) end)
 	help:SetScript("OnLeave", function() GameTooltip:Hide() end)
