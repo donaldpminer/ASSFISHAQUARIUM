@@ -298,6 +298,14 @@ end
 -- clears its ghost (it was replaced, not gone). fellOff defaults to now (used as the age).
 local function ghostAura(m, id, a, fellOff)
 	if not a then return end
+	if m.dead then return end -- a dead mob keeps no ghosts
+	-- If we can see the mob and it's at 0 HP (it just died / collapsed), don't linger its
+	-- fallen-off debuffs -- they'd only flash "0" on a corpse. Just drop them.
+	local tok = unitByGuid[m.guid]
+	if tok and UnitExists(tok) and UnitGUID(tok) == m.guid
+		and (UnitIsDead(tok) or (UnitHealthMax(tok) > 0 and UnitHealth(tok) == 0)) then
+		return
+	end
 	if not isWatched(a.name) then return end -- only debuffs on the watch list linger
 	m.ghosts = m.ghosts or {}
 	local g = m.ghosts[id]
