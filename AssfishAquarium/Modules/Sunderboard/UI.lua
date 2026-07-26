@@ -77,20 +77,12 @@ local function restorePos()
 	end
 end
 
--- The "?" help tooltip: how points are computed + the assumptions behind them.
+-- The "?" help tooltip: a terse note on what the points mean.
 local function showHelpTooltip(anchor)
 	GameTooltip:SetOwner(anchor, "ANCHOR_BOTTOMRIGHT")
-	GameTooltip:AddLine("Sunderboard - how points work")
-	GameTooltip:AddLine("For each physical, non-bleed hit on a debuffed target, it works out the EXTRA damage the stripped armor let through (versus the mob's full armor), then splits that among the active armor debuffs by how much armor each one removes, credited to whoever applied them. Points are that extra physical damage enabled.", 1, 1, 1, true)
-	GameTooltip:AddLine(" ")
-	GameTooltip:AddLine("Assumptions:", 1, 0.82, 0)
-	GameTooltip:AddLine("- Target base armor is ESTIMATED from level, not read: melee/boss tier is 3731 at level 63 and ~55 less per level below; caster bosses ~3009. Low-level mobs are rough.", 0.9, 0.9, 0.9, true)
-	GameTooltip:AddLine("- Damage reduction assumes a level-60 attacker:  armor / (armor + 5500).", 0.9, 0.9, 0.9, true)
-	GameTooltip:AddLine("- Only physical damage counts; bleeds ignore armor and are excluded.", 0.9, 0.9, 0.9, true)
-	GameTooltip:AddLine("- Armor stripped (max rank): Sunder 450/stack, Expose 3825, Faerie Fire 505, Curse of Recklessness 640.", 0.9, 0.9, 0.9, true)
-	GameTooltip:AddLine("- Sunder credit is split among warriors by stacks landed; refreshing a maxed (5) stack and missed/resisted casts don't count.", 0.9, 0.9, 0.9, true)
-	GameTooltip:AddLine("- The number left of each name is that player's landed, non-refresh applications.", 0.9, 0.9, 0.9, true)
-	GameTooltip:AddLine("- Runs where the Show setting says: while grouped, only in an instance, or always.", 0.9, 0.9, 0.9, true)
+	GameTooltip:AddLine("Sunderboard")
+	GameTooltip:AddLine("Points ~ the extra physical damage each armor debuff let through (mob armor is estimated from level). Bleeds don't count.", 1, 1, 1, true)
+	GameTooltip:AddLine("Left number = landed applications; Sunder split by stacks landed.", 0.8, 0.8, 0.8, true)
 	GameTooltip:Show()
 end
 
@@ -154,7 +146,7 @@ function UI:Build()
 
 	-- R: reset the leaderboard (refresh icon).
 	local reset = W.iconButton(frame, 16, "Interface\\Icons\\Ability_Hunter_Readiness",
-		"Reset the leaderboard", function() M.Core:Reset() end)
+		"Reset", function() M.Core:Reset() end)
 	core.CropIcon(reset:GetNormalTexture())
 	reset:SetPoint("RIGHT", close, "LEFT", 0, 0)
 
@@ -276,7 +268,7 @@ function M.BuildSettings(panel)
 	local reset = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
 	reset:SetSize(160, 22)
 	reset:SetPoint("TOPLEFT", 14, -110)
-	reset:SetText("Reset leaderboard")
+	reset:SetText("Reset")
 	reset:SetScript("OnClick", function()
 		M.Core:Reset()
 		print("|cffff8000Sunderboard|r: leaderboard reset.")
