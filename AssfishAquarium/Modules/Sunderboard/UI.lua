@@ -50,13 +50,9 @@ local function sortedPlayers()
 	return list
 end
 
--- header text: "Sunderboard - <raid>" plus a hint when empty
+-- header text: just the addon name (the zone/label was running into the buttons).
 local function headerText()
-	local s = M.session
-	local base = "Sunderboard"
-	if s.label then base = base .. " - " .. s.label end
-	if not next(s.points) then base = base .. " (no data)" end
-	return base
+	return "Sunderboard"
 end
 
 -- ------------------------------------------------------------------ build --

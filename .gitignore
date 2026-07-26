@@ -1,3 +1,6 @@
+# Secrets (CurseForge API token etc.) — never commit
+.env
+
 # Python build tooling (carried over from the source addons)
 __pycache__/
 *.pyc
