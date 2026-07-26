@@ -150,6 +150,7 @@ function UI:Build()
 	close:SetSize(20, 20)
 	close:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -3, -3)
 	close:SetScript("OnClick", function() core.SetModuleState("sb", "hidden") end)
+	UI.closeBtn = close -- hidden while locked (see ApplyLock)
 
 	-- R: reset the leaderboard (refresh icon).
 	local reset = W.iconButton(frame, 16, "Interface\\Icons\\Ability_Hunter_Readiness",
@@ -236,11 +237,20 @@ end
 
 -- --------------------------------------------------------------- lock ------
 
--- Synthesized lock: locked = the board can't be dragged (its background stays, so
--- it remains readable). Unlocked = draggable.
+-- Synthesized lock, matching FF Tracker / Mobber: locked = not draggable AND no window
+-- backdrop (clean borderless HUD; the per-row bars keep their own background so it stays
+-- readable), and the close button hides. Unlocked = draggable, backdrop + close shown.
 function UI:ApplyLock()
 	if not frame then return end
-	frame:EnableMouse(not M.db.locked)
+	local locked = M.db.locked
+	frame:EnableMouse(not locked)
+	if locked then
+		frame:SetBackdrop(nil)
+	else
+		frame:SetBackdrop(core.WINDOW_BACKDROP)
+		frame:SetBackdropColor(0, 0, 0, 0.85)
+	end
+	if UI.closeBtn then UI.closeBtn:SetShown(not locked) end
 end
 
 -- --------------------------------------------------------------- settings --
@@ -256,7 +266,7 @@ function M.BuildSettings(panel)
 	title:SetText("Sunderboard")
 	title:SetTextColor(1, 0.82, 0)
 
-	core.DisplayControl(panel, 14, -40, M) -- shared Hidden / Unlocked / Locked tri-state
+	core.DisplayControl(panel, 14, -40, M) -- shared Disabled / Unlocked / Locked tri-state
 
 	syncs[#syncs + 1] = W.radioRow(panel, 14, -74, "Show:",
 		{ { text = "Group", value = "group" }, { text = "Instance", value = "instance" }, { text = "Always", value = "always" } },
