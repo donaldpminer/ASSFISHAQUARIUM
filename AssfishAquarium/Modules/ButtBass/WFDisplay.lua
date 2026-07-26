@@ -297,6 +297,15 @@ local function computeSorted()
 		add("player")
 		for i = 1, 4 do add("party" .. i) end
 	end
+	-- Optional: only show the players Windfury helps (melee). The dimmed non-melee rows
+	-- (hunters, casters, the shaman itself) drop out entirely instead of just fading.
+	if M.db and M.db.wfMeleeOnly then
+		local keep = {}
+		for _, e in ipairs(list) do
+			if e.class == "WARRIOR" or e.class == "ROGUE" then keep[#keep + 1] = e end
+		end
+		list = keep
+	end
 	table.sort(list, function(a, b)
 		local pa, pb = CLASS_ORDER[a.class] or 99, CLASS_ORDER[b.class] or 99
 		if pa ~= pb then return pa < pb end

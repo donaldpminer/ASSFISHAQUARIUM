@@ -231,6 +231,7 @@ function M.SeedDB()
 	db.wfPos = db.wfPos or { point = "CENTER", relPoint = "CENTER", x = 240, y = 0 }
 	if db.wfDropSound == nil then db.wfDropSound = true end   -- play a cue when WF drops
 	db.wfSoundIdx = db.wfSoundIdx or 1
+	if db.wfMeleeOnly == nil then db.wfMeleeOnly = false end  -- party frame: hide non-melee rows
 	if db.windfury == nil then db.windfury = true end         -- the always-on announcer service
 end
 

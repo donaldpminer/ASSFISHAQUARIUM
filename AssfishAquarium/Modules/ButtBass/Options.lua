@@ -67,20 +67,25 @@ function M.BuildSettings(panel)
 		function() return M.db.wfEnabled ~= false end,
 		function(v) M.db.wfEnabled = v; if M.WFDisplay_ApplyEnabled then M.WFDisplay_ApplyEnabled() end end))
 
-	reg(W.slider(panel, 16, -310, "Party frame size", 0.5, 2.5, 0.25,
+	-- Only show players Windfury helps (melee); the non-melee rows drop out instead of fading.
+	reg(W.check(panel, 16, -304, "Only show melee (Windfury users)",
+		function() return M.db.wfMeleeOnly and true or false end,
+		function(v) M.db.wfMeleeOnly = v; if M.WFDisplay_OnRosterChange then M.WFDisplay_OnRosterChange() end end))
+
+	reg(W.slider(panel, 16, -334, "Party frame size", 0.5, 2.5, 0.25,
 		function() return M.db.wfScale or 1 end,
 		function(v) M.db.wfScale = v; if M.WFDisplay_ApplyScale then M.WFDisplay_ApplyScale() end end))
 
-	reg(W.check(panel, 16, -352, "Play sound when Windfury drops",
+	reg(W.check(panel, 16, -374, "Play sound when Windfury drops",
 		function() return M.db.wfDropSound ~= false end,
 		function(v) M.db.wfDropSound = v end))
 
 	-- sound picker (UIDropDownMenu, same pattern the standalone addon used)
 	local ddLabel = panel:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-	ddLabel:SetPoint("TOPLEFT", 20, -380)
+	ddLabel:SetPoint("TOPLEFT", 20, -400)
 	ddLabel:SetText("WF-drop sound")
 	local dd = CreateFrame("Frame", "AssfishButtBassWFSoundDD", panel, "UIDropDownMenuTemplate")
-	dd:SetPoint("TOPLEFT", 4, -396)
+	dd:SetPoint("TOPLEFT", 4, -416)
 	UIDropDownMenu_SetWidth(dd, 130)
 	UIDropDownMenu_Initialize(dd, function(_, level)
 		for i, s in ipairs(M.WF_SOUNDS or {}) do
