@@ -28,7 +28,7 @@ local frame, header, rows
 local dirty, elapsed = false, 0
 
 local function fmt(n)
-	return string.format("%d", n / 1000 + 0.5)  -- score/1000, no decimals, no suffix
+	return string.format("%d", n + 0.5)  -- raw points (~= extra physical damage enabled)
 end
 
 local function sortedPlayers()
@@ -70,29 +70,31 @@ local function restorePos()
 	end
 end
 
-local function makeTextButton(parent, text)
-	local b = CreateFrame("Button", nil, parent)
-	b:SetSize(16, 16)
+-- A header letter-button in the shared bundle style (mouse-over highlight), optional tooltip.
+local function makeTextButton(parent, text, tooltip)
+	local b = core.widgets.iconButton(parent, 16, nil, tooltip, nil)
 	local fs = b:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
 	fs:SetAllPoints(b)
 	fs:SetJustifyH("CENTER")
 	fs:SetText(text)
 	b:SetFontString(fs)
-	b:SetScript("OnEnter", function(s) fs:SetTextColor(1, 0.82, 0) end)
-	b:SetScript("OnLeave", function(s) fs:SetTextColor(1, 1, 1) end)
 	return b
 end
 
--- The "?" help tooltip: explains how points are computed.
+-- The "?" help tooltip: how points are computed + the assumptions behind them.
 local function showHelpTooltip(anchor)
 	GameTooltip:SetOwner(anchor, "ANCHOR_BOTTOMRIGHT")
 	GameTooltip:AddLine("Sunderboard - how points work")
-	GameTooltip:AddLine("Each physical hit on a debuffed target is divided among the active armor debuffs in proportion to how much armor each one removes, and credited to whoever applied them.", 1, 1, 1, true)
+	GameTooltip:AddLine("For each physical, non-bleed hit on a debuffed target, it works out the EXTRA damage the stripped armor let through (versus the mob's full armor), then splits that among the active armor debuffs by how much armor each one removes, credited to whoever applied them. Points are that extra physical damage enabled.", 1, 1, 1, true)
 	GameTooltip:AddLine(" ")
+	GameTooltip:AddLine("Assumptions:", 1, 0.82, 0)
+	GameTooltip:AddLine("- Target base armor is ESTIMATED from level, not read: melee/boss tier is 3731 at level 63 and ~55 less per level below; caster bosses ~3009. Low-level mobs are rough.", 0.9, 0.9, 0.9, true)
+	GameTooltip:AddLine("- Damage reduction assumes a level-60 attacker:  armor / (armor + 5500).", 0.9, 0.9, 0.9, true)
 	GameTooltip:AddLine("- Only physical damage counts; bleeds ignore armor and are excluded.", 0.9, 0.9, 0.9, true)
-	GameTooltip:AddLine("- Sunder credit is split among warriors by how many stacks they land. Refreshing an already-maxed (5-stack) debuff, and missed or resisted casts, do not count.", 0.9, 0.9, 0.9, true)
-	GameTooltip:AddLine("- The number left of each name is that player's count of landed, non-refresh applications.", 0.9, 0.9, 0.9, true)
-	GameTooltip:AddLine("- Score shown = points / 1000.", 0.9, 0.9, 0.9, true)
+	GameTooltip:AddLine("- Armor stripped (max rank): Sunder 450/stack, Expose 3825, Faerie Fire 505, Curse of Recklessness 640.", 0.9, 0.9, 0.9, true)
+	GameTooltip:AddLine("- Sunder credit is split among warriors by stacks landed; refreshing a maxed (5) stack and missed/resisted casts don't count.", 0.9, 0.9, 0.9, true)
+	GameTooltip:AddLine("- The number left of each name is that player's landed, non-refresh applications.", 0.9, 0.9, 0.9, true)
+	GameTooltip:AddLine("- Runs where the Show setting says: while grouped, only in an instance, or always.", 0.9, 0.9, 0.9, true)
 	GameTooltip:Show()
 end
 
@@ -158,11 +160,11 @@ function UI:Build()
 	header:SetText("Sunderboard")
 
 	-- X: turn the whole module off (the umbrella's master switch = hidden state).
-	local close = makeTextButton(frame, "X")
+	local close = makeTextButton(frame, "X", "Turn Sunderboard off")
 	close:SetPoint("RIGHT", strip, "RIGHT", -4, 0)
 	close:SetScript("OnClick", function() core.SetModuleState("sb", "hidden") end)
 
-	local reset = makeTextButton(frame, "R")
+	local reset = makeTextButton(frame, "R", "Reset the leaderboard")
 	reset:SetPoint("RIGHT", close, "LEFT", -2, 0)
 	reset:SetScript("OnClick", function() M.Core:Reset() end)
 

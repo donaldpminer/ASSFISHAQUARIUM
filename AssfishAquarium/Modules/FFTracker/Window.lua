@@ -200,22 +200,8 @@ local function openColorPicker(r, g, b, onChange)
 	end
 end
 
-local function iconButton(parent, size, tex, tooltip, onClick)
-	local b = CreateFrame("Button", nil, parent)
-	b:SetSize(size, size)
-	if tex then b:SetNormalTexture(tex) end
-	b:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
-	b:SetScript("OnClick", onClick)
-	if tooltip then
-		b:SetScript("OnEnter", function(self)
-			GameTooltip:SetOwner(self, "ANCHOR_TOP")
-			GameTooltip:SetText(tooltip, 1, 1, 1)
-			GameTooltip:Show()
-		end)
-		b:SetScript("OnLeave", function() GameTooltip:Hide() end)
-	end
-	return b
-end
+-- The shared header-button style (mouse-over highlight + tooltip); see Core/Lib_Widgets.lua.
+local iconButton = core.widgets.iconButton
 
 -- Hide pooled widgets from index `from` (default 1) to the end, dropping the entry
 -- reference so a stale row/icon can't be re-animated.

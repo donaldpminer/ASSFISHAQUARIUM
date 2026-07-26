@@ -100,6 +100,26 @@ function W.showColorPicker(r, g, b, onChange)
 	end
 end
 
+-- A small square window-header button with the standard mouse-over highlight and an optional
+-- GameTooltip. `tex` = an icon texture (pass nil for a bare button you can drop a letter onto).
+-- The shared header-button style used across the bundle's module windows.
+function W.iconButton(parent, size, tex, tooltip, onClick)
+	local b = CreateFrame("Button", nil, parent)
+	b:SetSize(size, size)
+	if tex then b:SetNormalTexture(tex) end
+	b:SetHighlightTexture("Interface\\Buttons\\UI-Common-MouseHilight", "ADD")
+	if onClick then b:SetScript("OnClick", onClick) end
+	if tooltip then
+		b:SetScript("OnEnter", function(self)
+			GameTooltip:SetOwner(self, "ANCHOR_TOP")
+			GameTooltip:SetText(tooltip, 1, 1, 1)
+			GameTooltip:Show()
+		end)
+		b:SetScript("OnLeave", function() GameTooltip:Hide() end)
+	end
+	return b
+end
+
 -- A clickable colour swatch showing get()'s {r,g,b}; clicking opens the picker and
 -- calls set({r,g,b}). Has :sync().
 function W.colorSwatch(parent, x, y, get, set)
