@@ -64,6 +64,34 @@ function core.EachModule(fn) -- iterate in registration order
 	for _, key in ipairs(ns.moduleOrder) do fn(ns.modules[key]) end
 end
 
+-- Call a module/service hook defensively: one module's error must never abort login or the
+-- lifecycle of the others. Nil fn is a no-op. Surfaces the error to chat so it's not silent.
+function core.SafeCall(label, fn, ...)
+	if type(fn) ~= "function" then return end
+	local ok, err = pcall(fn, ...)
+	if not ok then
+		print("|cffff5555ASSFISH AQUARIUM|r error in " .. tostring(label) .. ": " .. tostring(err))
+	end
+	return ok
+end
+
+--------------------------------------------------------------------------------
+-- Always-on services: run regardless of any module's enable state (e.g. ButtBass's
+-- Windfury announcer, which the user wants live unless explicitly turned off). A service
+-- registers a Start() that Boot calls once at login; the service itself decides whether to
+-- act based on its own saved setting, and re-checks that setting when it changes.
+--------------------------------------------------------------------------------
+function core.RegisterService(name, spec)
+	ns.services[name] = spec
+	return spec
+end
+
+function core.StartServices()
+	for name, s in pairs(ns.services) do
+		core.SafeCall("service:" .. name, s.Start)
+	end
+end
+
 --------------------------------------------------------------------------------
 -- SavedVariables slices
 --------------------------------------------------------------------------------
@@ -147,17 +175,17 @@ function core.SetModuleState(key, state)
 	local prev = core.GetModuleState(key)
 	if state == "hidden" then
 		if prev ~= "hidden" and M._enabled then
-			if M.Disable then M.Disable(M) end
+			core.SafeCall(key .. ":Disable", M.Disable, M)
 			core.CancelTickers(key)
 			core.UnsubscribeCLEU(key)
 			M._enabled = false
 		end
 	else
 		if not M._enabled then
-			if M.Enable then M.Enable(M) end
+			core.SafeCall(key .. ":Enable", M.Enable, M)
 			M._enabled = true
 		end
-		if M.SetDisplayState then M.SetDisplayState(M, state) end
+		core.SafeCall(key .. ":SetDisplayState", M.SetDisplayState, M, state)
 	end
 	stateStore()[key] = state
 	if core.RefreshMinimap then core.RefreshMinimap() end

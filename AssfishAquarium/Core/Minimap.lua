@@ -153,7 +153,7 @@ function core.BuildMinimap()
 	button:SetScript("OnDragStop", function() button:SetScript("OnUpdate", nil) end)
 	button:SetScript("OnEnter", function(self)
 		GameTooltip:SetOwner(self, "ANCHOR_LEFT")
-		GameTooltip:SetText("Assfish Aquarium", 1, 1, 1)
+		GameTooltip:SetText("ASSFISH AQUARIUM", 1, 1, 1)
 		core.EachModule(function(M)
 			local s = STATE_COLOR[core.GetModuleState(M.key)] or STATE_COLOR.hidden
 			GameTooltip:AddDoubleLine(M.title, s[4], 0.8, 0.8, 0.8, s[1], s[2], s[3])

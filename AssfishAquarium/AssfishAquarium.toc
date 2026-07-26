@@ -1,5 +1,5 @@
 ## Interface: 11509
-## Title: Assfish Aquarium
+## Title: ASSFISH AQUARIUM
 ## Notes: Umbrella for Donald's Classic Era addons (Mobber, FF Tracker, Sunderboard, ButtBass) with unified options and one minimap button.
 ## Author: donaldpminer
 ## Version: 0.1.0

@@ -38,14 +38,14 @@ end
 function core.AddSubcategory(M)
 	if not core.useNativeSettings or not parentCategory then return end
 	local f = CreateFrame("Frame")
-	if M.BuildSettings then M.BuildSettings(f, M) end
+	core.SafeCall(M.title .. ":BuildSettings", M.BuildSettings, f, M)
 	M.settingsCategory = Settings.RegisterCanvasLayoutSubcategory(parentCategory, f, M.title)
 end
 
 local function buildParentPanel(f)
 	local title = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
 	title:SetPoint("TOPLEFT", 14, -16)
-	title:SetText("Assfish Aquarium")
+	title:SetText("ASSFISH AQUARIUM")
 	title:SetTextColor(1, 0.82, 0)
 	local sub = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	sub:SetPoint("TOPLEFT", 16, -40)
@@ -65,7 +65,7 @@ function core.InitSettings()
 	if not core.useNativeSettings then return end
 	local root = CreateFrame("Frame")
 	buildParentPanel(root)
-	parentCategory = Settings.RegisterCanvasLayoutCategory(root, "AssfishAquarium")
+	parentCategory = Settings.RegisterCanvasLayoutCategory(root, "ASSFISH AQUARIUM")
 	Settings.RegisterAddOnCategory(parentCategory)
 	core.settingsParent = parentCategory
 	core.EachModule(function(M) core.AddSubcategory(M) end)

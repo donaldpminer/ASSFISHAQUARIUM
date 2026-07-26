@@ -1,4 +1,4 @@
-# Assfish Aquarium
+# ASSFISH AQUARIUM
 
 A single World of Warcraft **Classic Era** addon that bundles several of Donald Miner's
 Classic Era helpers under one roof, with **unified options** (one page in
