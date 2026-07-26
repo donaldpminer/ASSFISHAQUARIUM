@@ -7,7 +7,13 @@
 ## SavedVariablesPerCharacter: AssfishAquariumCharDB
 ## IconTexture: Interface\Icons\INV_Misc_Fish_24
 
-# --- shared core (loads first) ---
-Core\Core.lua
+# --- shared core (order = load order) ---
+Core\Namespace.lua
+Core\Lib_Widgets.lua
+Core\Settings.lua
+Core\Minimap.lua
+Core\Boot.lua
 
 # --- modules (added as they are integrated) ---
+Modules\Mobber\Core.lua
+Modules\Mobber\Window.lua
