@@ -120,6 +120,19 @@ function W.iconButton(parent, size, tex, tooltip, onClick)
 	return b
 end
 
+-- The one "gear" (cog) icon used for the Options button on every module window, so the
+-- affordance looks identical across Mobber / FF Tracker / Sunderboard.
+core.GEAR_ICON = "Interface\\Icons\\INV_Misc_Gear_01"
+
+-- A standardized window-header Options button: an iconButton wearing the shared gear,
+-- cropped like every other bundle icon. Tooltip defaults to "Options".
+function W.gearButton(parent, size, tooltip, onClick)
+	local b = W.iconButton(parent, size, core.GEAR_ICON, tooltip or "Options", onClick)
+	local t = b:GetNormalTexture()
+	if core.CropIcon and t then core.CropIcon(t) end
+	return b
+end
+
 -- A clickable colour swatch showing get()'s {r,g,b}; clicking opens the picker and
 -- calls set({r,g,b}). Has :sync().
 function W.colorSwatch(parent, x, y, get, set)

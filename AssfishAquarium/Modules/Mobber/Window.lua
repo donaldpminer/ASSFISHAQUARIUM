@@ -73,9 +73,10 @@ local function mobLess(a, b)
 	return a.order < b.order
 end
 
-local win, configPanel, blPanel, watchPanel
+local win, configPanel, blPanel, watchPanel, gearBtn
 -- Options live in the shared Assfish Aquarium Settings page (core registers this module's
--- subcategory and calls M.BuildSettings); the two list managers are pop-out windows.
+-- subcategory and calls M.BuildSettings); the gear button below opens it, and the two
+-- list managers are pop-out windows.
 local blocks = {}
 local sortBuf = {}
 local priBuf, nonBuf, slotAssign = {}, {}, {} -- scratch for the prioritized/rest slot split
@@ -623,6 +624,7 @@ local function applyLock()
 		win:SetBackdrop(BACKDROP)
 		win:SetBackdropColor(0, 0, 0, 0.85)
 	end
+	if gearBtn then gearBtn:SetShown(not M.db.locked) end -- Options button: unlocked only
 end
 M.ApplyLock = applyLock -- core's SetDisplayState drives lock/unlock through this
 
@@ -948,6 +950,13 @@ function M.BuildWindow()
 	win:SetScript("OnDragStart", function() if not M.db.locked then win:StartMoving() end end)
 	win:SetScript("OnDragStop", function() win:StopMovingOrSizing(); savePos() end)
 	M.win = win
+
+	-- The shared gear Options button, pinned just inside the top-right corner. Shown only
+	-- while unlocked (applyLock toggles it); a high frame level keeps it clickable above the
+	-- mob grid / health bars that fill the window.
+	gearBtn = W.gearButton(win, 16, "Options", function() core.OpenModuleSettings("mob") end)
+	gearBtn:SetPoint("TOPRIGHT", win, "TOPRIGHT", -3, -3)
+	gearBtn:SetFrameLevel(win:GetFrameLevel() + 20)
 
 	applyPos()
 	applyLock()

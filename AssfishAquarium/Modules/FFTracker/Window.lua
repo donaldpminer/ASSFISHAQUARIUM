@@ -1497,11 +1497,9 @@ local function buildWindow(cfg)
 		"New window", function() M.AddWindow() end)
 	self.addBtn:SetPoint("RIGHT", self.lockBtn, "LEFT", -2, 0)
 
-	-- A spellbook icon (evokes "spells") opens the spells + per-window options panel.
-	self.gearBtn = iconButton(frame, 14, "Interface\\Icons\\INV_Misc_Book_09",
-		"Spells & window options", function() self:ToggleConfig() end)
-	local gt = self.gearBtn:GetNormalTexture()
-	if gt then cropIcon(gt) end
+	-- The shared gear (cog) opens the spells + per-window options panel.
+	self.gearBtn = core.widgets.gearButton(frame, 14, "Spells & window options",
+		function() self:ToggleConfig() end)
 	self.gearBtn:SetPoint("RIGHT", self.addBtn, "LEFT", -2, 0)
 
 	local resize = CreateFrame("Button", nil, frame)

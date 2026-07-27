@@ -153,6 +153,11 @@ function UI:Build()
 	help:SetScript("OnEnter", function(self) showHelpTooltip(self) end)
 	help:SetScript("OnLeave", function() GameTooltip:Hide() end)
 
+	-- Gear: the shared Options button; jumps to Sunderboard's page in the Settings window.
+	local gear = W.gearButton(frame, 16, "Options", function() core.OpenModuleSettings("sb") end)
+	gear:SetPoint("RIGHT", help, "LEFT", -2, 0)
+	UI.optionsBtn = gear -- hidden while locked (see ApplyLock)
+
 	rows = {}
 	createRow(1)
 
@@ -239,6 +244,7 @@ function UI:ApplyLock()
 		frame:SetBackdropColor(0, 0, 0, 0.85)
 	end
 	if UI.closeBtn then UI.closeBtn:SetShown(not locked) end
+	if UI.optionsBtn then UI.optionsBtn:SetShown(not locked) end
 end
 
 -- --------------------------------------------------------------- settings --

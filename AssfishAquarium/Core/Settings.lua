@@ -76,3 +76,15 @@ function core.OpenSettings()
 		Settings.OpenToCategory(parentCategory.GetID and parentCategory:GetID() or parentCategory.ID)
 	end
 end
+
+-- Open the Settings window straight to one module's own subcategory (used by the gear
+-- Options button on each module window). Falls back to the parent page if we can't.
+function core.OpenModuleSettings(key)
+	local M = ns.modules[key]
+	local cat = M and M.settingsCategory
+	if core.useNativeSettings and cat and Settings.OpenToCategory then
+		Settings.OpenToCategory(cat.GetID and cat:GetID() or cat.ID)
+	else
+		core.OpenSettings()
+	end
+end
