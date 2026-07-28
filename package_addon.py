@@ -18,7 +18,7 @@ ROOT = Path(__file__).resolve().parent
 DIST = ROOT / "dist"
 ZIP = DIST / "AssfishAquarium.zip"
 
-# The Core addon plus one addon per tool (each a top-level folder in the zip).
+# The Core addon, one addon per tool, plus adopted third-party addons (original folder names).
 ADDONS = [
     "AssfishAquarium",
     "AssfishAquarium_Mobber",
@@ -26,6 +26,7 @@ ADDONS = [
     "AssfishAquarium_Sunderboard",
     "AssfishAquarium_ButtBass",
     "AssfishAquarium_Windfury",
+    "BuffTimers",
 ]
 
 EXCLUDE_NAMES = {".DS_Store", "Thumbs.db", "__pycache__", ".git"}

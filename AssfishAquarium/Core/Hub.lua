@@ -40,13 +40,15 @@ local function suiteList()
 	local out = {}
 	local q = searchText
 	core.EachSuiteAddon(function(name)
+		local adopted = core.ADOPTED[name]        -- third-party addon we bundle (manifest)
 		local title = core.AddonMeta(name, "Title") or name
-		local desc  = core.AddonMeta(name, "Notes") or ""
-		local cat   = core.AddonMeta(name, "X-AAQ-HubCategory") or "Other"
+		local desc  = (adopted and adopted.desc) or core.AddonMeta(name, "Notes") or ""
+		local cat   = (adopted and adopted.hubCategory) or core.AddonMeta(name, "X-AAQ-HubCategory") or "Other"
 		local key   = core.AddonMeta(name, "X-AAQ-Key")
 		if q ~= "" and not (title .. " " .. desc .. " " .. cat):lower():find(q, 1, true) then return end
 		out[#out + 1] = {
 			addon = name, title = title, desc = desc, cat = cat, key = key,
+			source = adopted and "adopted" or "mine",
 			enabled = core.AddonEnabled(name), loaded = core.AddonLoaded(name),
 		}
 	end)
@@ -140,7 +142,8 @@ local function fillRow(r, item)
 	local avail = (not item.key) or core.IsAvailable(item.key) -- class gate (e.g. Shaman Stuff)
 
 	r.enabled:SetChecked(item.enabled)
-	r.name:SetText(item.title)
+	-- adopted third-party addons carry a plain "(Adopted)" after the name
+	r.name:SetText(item.source == "adopted" and (item.title .. " |cff888888(Adopted)|r") or item.title)
 	local bright = item.enabled and avail
 	r.name:SetTextColor(bright and 1 or 0.55, bright and 0.82 or 0.55, bright and 0 or 0.55)
 	r.newtag:SetShown(item.key and core.IsNewModule(item.key) or false)

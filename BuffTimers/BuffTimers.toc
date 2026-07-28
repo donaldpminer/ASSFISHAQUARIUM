@@ -1,0 +1,37 @@
+## Interface: 11509
+## IconTexture: Interface\AddOns\BuffTimers\Media\icon
+## Title: BuffTimers
+## Author: mdhippie
+## Notes: v2.0.15 -- Buff time options
+## Notes-ruRU: Отображает точную длительность действия баффов, с возможностью указания секунд и миллисекунд
+## Version: v2.0.15
+## DefaultState: enabled
+## SavedVariables: BuffTimersDB
+## OptionalDeps: Ace3, LibSharedMedia-3.0
+
+## Category-enUS: ASSFISH AQUARIUM
+## Category-deDE: Buffs & Debuffs
+## Category-esES: Beneficios y Perjuicios
+## Category-esMX: Beneficios y Perjuicios
+## Category-frFR: Améliorations et Affaiblissements
+## Category-itIT: Benefici e penalità
+## Category-koKR: 강화 및 약화 효과
+## Category-ptBR: Bônus e Penalidades
+## Category-ruRU: Баффы и дебаффы
+## Category-zhCN: 增益和减益
+## Category-zhTW: 增益與減益
+
+## X-Category: Buffs & Debuffs
+## X-Credits: mdhippie
+## X-License: All Rights Reserved: You are free to fork and modify on GitHub, please ask us about anything else.
+## X-Website: https://github.com/sandervspl/BuffTimers
+## X-Curse-Project-ID: 352620
+## X-Wago-ID: XrNkde6a
+
+#@no-lib-strip@
+embeds.xml
+#@end-no-lib-strip@
+
+Locales.lua
+BuffTimers.lua
+Options.lua

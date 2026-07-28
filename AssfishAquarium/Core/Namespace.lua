@@ -258,6 +258,17 @@ end
 --------------------------------------------------------------------------------
 core.SUITE_PREFIX = "AssfishAquarium_"
 
+-- ADOPTED addons: third-party addons Donald has adopted/repaired and bundles in the suite. They
+-- keep their ORIGINAL folder name + code untouched, so we can't detect them by the suite prefix;
+-- this manifest lists them by addon name. Each entry supplies the Hub's category + a friendly
+-- description (their own TOC Notes are often terse/versiony). They show as "(Adopted)" in the Hub.
+core.ADOPTED = {
+	BuffTimers = {
+		hubCategory = "Buffs",
+		desc = "Shows the exact remaining time on your buff / debuff icons. Third-party addon, repaired for the 1.15.9 UI.",
+	},
+}
+
 local CA = C_AddOns or {}
 local _GetNum      = CA.GetNumAddOns       or GetNumAddOns
 local _GetInfo     = CA.GetAddOnInfo       or GetAddOnInfo
@@ -288,13 +299,15 @@ function core.SetAddonEnabled(name, on)
 	end
 end
 
--- Iterate every tool addon (name starts with the suite prefix; the Core addon itself has no
--- underscore so it's skipped). fn(name).
+-- Iterate every tool addon the player has installed: our own (name starts with the suite prefix;
+-- the Core addon has no underscore so it's skipped) PLUS any adopted addon in the manifest. fn(name).
 function core.EachSuiteAddon(fn)
 	local n = (_GetNum and _GetNum()) or 0
 	for i = 1, n do
 		local name = _GetInfo and _GetInfo(i)
-		if name and name:sub(1, #core.SUITE_PREFIX) == core.SUITE_PREFIX then fn(name) end
+		if name and (name:sub(1, #core.SUITE_PREFIX) == core.SUITE_PREFIX or core.ADOPTED[name]) then
+			fn(name)
+		end
 	end
 end
 
