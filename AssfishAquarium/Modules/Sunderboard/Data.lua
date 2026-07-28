@@ -28,6 +28,18 @@ D.ARMOR = {
 
 D.SUNDER_MAX_STACKS = 5
 
+-- Base debuff durations (seconds, max rank). Used by the "refresh with little time left still
+-- counts" rule: refreshing a debuff while it has <= D.REFRESH_WINDOW seconds remaining is
+-- credited as an effective (needed maintenance) cast; refreshing early -- with more time left --
+-- is not. Sunder/Expose 30s, Faerie Fire 40s, Curse of Recklessness 2 min.
+D.DURATION = {
+	sunder = 30,
+	expose = 30,
+	faerie = 40,
+	reck   = 120,
+}
+D.REFRESH_WINDOW = 16
+
 -- Debuffs we track, keyed by the spellName the combat log reports. Matching by
 -- NAME (not spellId) collapses every rank into one entry, which is exactly what
 -- we want. Caveat: spellName is client-locale text -- this table is enUS; add

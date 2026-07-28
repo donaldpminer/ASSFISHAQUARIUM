@@ -41,11 +41,16 @@ local bband = bit.band
 local FLAG_PLAYER = 0x00000400  -- COMBATLOG_OBJECT_TYPE_PLAYER
 local SCHOOL_PHYSICAL = 1       -- SCHOOL_MASK_PHYSICAL
 
+-- /sb debug: prints every tracked-debuff SPELL_MISSED to chat (spell, missType, caster) so
+-- we can see exactly what the combat log delivers (does a Sunder "MISS" actually arrive?).
+local debug = false
+
 -- session.points: [guid] = { name, class, total, byKey = {sunder,expose,faerie,reck} }
 -- session lives partly in SavedVariables so a /reload mid-raid keeps the board.
 --   active  = SCORING gate: only true inside a dungeon/raid instance.
 --   visible = WINDOW gate: true whenever grouped (party/raid) or in an instance.
-local session = { active = false, visible = false, instanceID = nil, label = nil, points = {} }
+local session = { active = false, visible = false, instanceID = nil, label = nil,
+                  points = {}, rosterWarriors = {} }
 M.session = session
 
 -- tracked[destGUID][key] = auraState
@@ -80,7 +85,9 @@ local function ensurePlayer(guid, name, class)
 			total = 0,
 			byKey = { sunder = 0, expose = 0, faerie = 0, reck = 0 },
 			casts = {},      -- [key] = total casts of that armor debuff
-			effective = {},  -- [key] = casts that actually did work
+			effective = {},  -- [key] = casts that added a stack / freshly applied
+			refreshok = {},  -- [key] = "needed" refreshes (<= window s left) -- also count as good
+			misses = {},     -- [key] = { [missType] = count }  (dodge/parry/resist/...)
 		}
 		session.points[guid] = p
 	else
@@ -88,6 +95,8 @@ local function ensurePlayer(guid, name, class)
 		if not p.class then p.class = class or classOf(guid) end
 		p.casts = p.casts or {}          -- back-fill records persisted before this
 		p.effective = p.effective or {}
+		p.refreshok = p.refreshok or {}
+		p.misses = p.misses or {}
 	end
 	return p
 end
@@ -119,9 +128,25 @@ end
 -- tagged with the true caster) and use the aura APPLIED/REMOVED events only for
 -- presence + stack count.
 --
--- A cast is credited only when it does real work: it must be about to ADD a
--- stack (target under 5 at cast time) AND it must land (no SPELL_MISSED). Casts
--- into an already-maxed 5-stack debuff, and missed/resisted casts, earn nothing.
+-- A cast is credited as effective when it ADDS a stack (target under 5 at cast time) and lands.
+-- A cast into an already-maxed 5-stack debuff normally earns nothing -- EXCEPT a "needed"
+-- refresh: if the debuff is about to fall off (<= D.REFRESH_WINDOW seconds left) the refresh is
+-- credited too, as maintenance. Missed/resisted casts earn nothing either way.
+
+-- Seconds left on a tracked debuff, from the base duration and the last aura event we saw
+-- (a.refreshAt, updated on every applied/dose/refresh). nil if we don't know its timing yet.
+local function debuffRemaining(a)
+	local dur = a and D.DURATION[a.key]
+	local last = a and (a.refreshAt or a.applied)
+	if not dur or not last then return nil end
+	return dur - (GetTime() - last)
+end
+
+-- True when refreshing `a` right now is "needed" (it was about to expire).
+local function isNeededRefresh(a)
+	local rem = debuffRemaining(a)
+	return rem ~= nil and rem <= D.REFRESH_WINDOW
+end
 
 -- Best-known current stack count: what we've observed, or -- if sunder is up but
 -- we never saw it build (e.g. joined mid-fight) -- assume it's maxed.
@@ -143,14 +168,17 @@ local function ensureSunder(destGUID, def)
 	return a
 end
 
--- Credit a warrior's Sunder weight, but only if this cast is adding a stack
--- (target under 5). Returns true when credited (an "effective" cast). Optimistic
--- vs. landing; undone in sunderMiss() if the attack was avoided.
+-- Classify a Sunder cast and record its scoring weight. Returns:
+--   "stack"   -> adds a stack (target under 5): credits a scoring weight + effective count.
+--   "refresh" -> maxed but a NEEDED refresh (<= window left): counts as good, but no new
+--                armor is stripped so it earns NO weight (no extra scoring share).
+--   false     -> maxed early refresh: earns nothing.
+-- Optimistic vs. landing; undone in sunderMiss() if the attack was avoided.
 local function sunderCast(destGUID, def, srcGUID, srcName)
 	local td = tracked[destGUID]
 	local existing = td and td[def.key]
 	if existing and sunderStacks(existing) >= D.SUNDER_MAX_STACKS then
-		return false  -- already at 5 stacks; this cast only refreshes -> doesn't count
+		return isNeededRefresh(existing) and "refresh" or false
 	end
 	local a = ensureSunder(destGUID, def)
 	local o = a.owners[srcGUID]
@@ -160,43 +188,67 @@ local function sunderCast(destGUID, def, srcGUID, srcName)
 	end
 	o.name = srcName or o.name
 	o.weight = o.weight + 1
-	return true
+	return "stack"
 end
 
--- SPELL_CAST_SUCCESS of any tracked armor debuff -> tally the cast (and, for
--- sunder, the weight + "effective" count when it adds a stack). Effective for
--- single debuffs is tallied on APPLIED instead (see applySingle).
+-- SPELL_CAST_SUCCESS of any tracked armor debuff -> tally the cast (and, for sunder, the
+-- weight + effective/needed-refresh count). Effective for single debuffs is tallied on
+-- APPLIED, and their needed refreshes on SPELL_AURA_REFRESH (see applySingle / refreshSingle).
 local function countCast(destGUID, def, srcGUID, srcName)
 	local p = ensurePlayer(srcGUID, srcName)
 	p.casts[def.key] = (p.casts[def.key] or 0) + 1
 	if def.kind == "sunder" then
-		if sunderCast(destGUID, def, srcGUID, srcName) then
+		local r = sunderCast(destGUID, def, srcGUID, srcName)
+		if r == "stack" then
 			p.effective[def.key] = (p.effective[def.key] or 0) + 1
+		elseif r == "refresh" then
+			p.refreshok[def.key] = (p.refreshok[def.key] or 0) + 1
 		end
 	end
 end
 
--- SPELL_MISSED of Sunder (miss / dodge / parry / resist / immune) -> the cast
--- didn't land. Undo the weight + effective credit, but only for a build attempt
--- (stacks < 5), symmetric with sunderCast (a missed refresh was never credited).
+-- SPELL_MISSED of any tracked debuff -> record the outcome (dodge / parry / miss /
+-- resist / immune / ...) per caster, for the row hover breakdown. This is stats only;
+-- the SCORING undo for a missed sunder is done separately in sunderMiss(). srcGUID is
+-- reliable on SPELL_MISSED even for the shared sunder debuff (it's the swing that got
+-- avoided), so this is safe to attribute directly.
+local function countMiss(def, srcGUID, srcName, missType)
+	local p = ensurePlayer(srcGUID, srcName)
+	local m = p.misses[def.key]
+	if not m then m = {}; p.misses[def.key] = m end
+	local mt = missType or "MISS"
+	m[mt] = (m[mt] or 0) + 1
+end
+
+-- SPELL_MISSED of Sunder (miss / dodge / parry / resist / immune) -> the cast didn't land;
+-- undo whatever countCast optimistically credited. Mirror sunderCast's classification: at max
+-- stacks it could only have credited a NEEDED refresh (undo refreshok); below max it credited a
+-- stack (undo weight + effective). The miss doesn't refresh the timer, so isNeededRefresh reads
+-- the same as it did at cast time.
 local function sunderMiss(destGUID, def, srcGUID)
 	local td = tracked[destGUID]
 	if not td then return end
 	local a = td[def.key]
 	if not a then return end
-	if sunderStacks(a) >= D.SUNDER_MAX_STACKS then return end
+	local p = session.points[srcGUID]
+	if sunderStacks(a) >= D.SUNDER_MAX_STACKS then
+		if p and isNeededRefresh(a) and (p.refreshok[def.key] or 0) > 0 then
+			p.refreshok[def.key] = p.refreshok[def.key] - 1
+		end
+		return
+	end
 	local o = a.owners[srcGUID]
 	if o then
 		o.weight = o.weight - 1
 		if o.weight < 0 then o.weight = 0 end
 	end
-	local p = session.points[srcGUID]
 	if p and p.effective[def.key] and p.effective[def.key] > 0 then
 		p.effective[def.key] = p.effective[def.key] - 1
 	end
 end
 
--- Aura APPLIED/DOSE/REFRESH of Sunder -> it's present; note stack count.
+-- Aura APPLIED/DOSE/REFRESH of Sunder -> it's present; note stack count + stamp the maintenance
+-- timer (refreshAt) so we can tell later how much time was left when the next cast refreshes it.
 local function sunderPresence(destGUID, destName, def, stacks)
 	local td = tracked[destGUID]
 	if not td then td = {}; tracked[destGUID] = td end
@@ -204,6 +256,7 @@ local function sunderPresence(destGUID, destName, def, stacks)
 	local a = ensureSunder(destGUID, def)
 	if not a.active then a.applied = GetTime() end
 	a.active = true
+	a.refreshAt = GetTime()
 	if stacks then a.stacks = stacks end
 end
 
@@ -216,9 +269,22 @@ local function applySingle(destGUID, destName, def, srcGUID, srcName)
 	local p = ensurePlayer(srcGUID, srcName)
 	p.effective[def.key] = (p.effective[def.key] or 0) + 1
 	td[def.key] = {
-		key = def.key, def = def, applied = GetTime(), stacks = 1,
+		key = def.key, def = def, applied = GetTime(), refreshAt = GetTime(), stacks = 1,
 		sourceGUID = srcGUID, sourceName = srcName, class = classOf(srcGUID),
 	}
+end
+
+-- SPELL_AURA_REFRESH of a single debuff (expose / faerie / reck): the caster recast it while
+-- it was already up. Credit it as a "needed" refresh only if it was about to expire (<= window
+-- left); either way, restamp the maintenance timer.
+local function refreshSingle(destGUID, def, srcGUID, srcName)
+	local td = tracked[destGUID]
+	local a = td and td[def.key]
+	if a and isNeededRefresh(a) then
+		local p = ensurePlayer(srcGUID, srcName)
+		p.refreshok[def.key] = (p.refreshok[def.key] or 0) + 1
+	end
+	if a then a.refreshAt = GetTime() end
 end
 
 local function removeAura(destGUID, destName, def)
@@ -328,6 +394,19 @@ end
 local function handleCLEU()
 	local _, sub, _, srcGUID, srcName, srcFlags, _, destGUID, destName = CombatLogGetCurrentEventInfo()
 
+	-- /sb debug: dump EVERY miss a player produces, whatever subevent it rides on, so we can
+	-- see how a Sunder white-miss actually shows up (SPELL_MISSED? SWING_MISSED? some other
+	-- missType string?). Swing misses carry no spell name; spell/range misses do.
+	if debug and srcName and bband(srcFlags or 0, FLAG_PLAYER) ~= 0 then
+		if sub == "SWING_MISSED" then
+			local mt = select(12, CombatLogGetCurrentEventInfo())
+			print(string.format("|cffff8000SB|r %s: SWING_MISSED -> %s", srcName, tostring(mt)))
+		elseif sub == "SPELL_MISSED" or sub == "RANGE_MISSED" then
+			local spellName, _, mt = select(13, CombatLogGetCurrentEventInfo())
+			print(string.format("|cffff8000SB|r %s: %s '%s' -> %s", srcName, sub, tostring(spellName), tostring(mt)))
+		end
+	end
+
 	-- physical direct damage -> scoring
 	if sub == "SWING_DAMAGE" then
 		local amount, _, school = select(12, CombatLogGetCurrentEventInfo())
@@ -354,15 +433,17 @@ local function handleCLEU()
 		return
 	end
 
-	-- A missed / dodged / parried sunder never landed -> undo its cast credit.
+	-- A missed / dodged / parried / resisted cast never landed. Record the outcome for
+	-- the hover breakdown (all debuffs), and for sunder also undo its optimistic credit.
 	if sub == "SPELL_MISSED" then
-		if not session.active or not destGUID then return end
+		if not destGUID then return end
 		if bband(srcFlags or 0, FLAG_PLAYER) == 0 then return end
-		local _, spellName = select(12, CombatLogGetCurrentEventInfo())
+		local _, spellName, _, missType = select(12, CombatLogGetCurrentEventInfo())
 		local def = D.DEBUFFS[spellName]
-		if def and def.kind == "sunder" then
-			sunderMiss(destGUID, def, srcGUID)
-		end
+		if not def then return end
+		if not session.active then return end
+		countMiss(def, srcGUID, srcName, missType)
+		if def.kind == "sunder" then sunderMiss(destGUID, def, srcGUID) end
 		return
 	end
 
@@ -389,8 +470,12 @@ local function handleCLEU()
 				-- APPLIED -> 1 stack; DOSE -> new count; REFRESH -> keep current.
 				local stacks = (sub == "SPELL_AURA_APPLIED") and 1 or amount
 				sunderPresence(destGUID, destName, def, stacks)
-			elseif sub ~= "SPELL_AURA_REFRESH" then
-				-- single debuffs: attribute on APPLIED; ignore their refreshes
+			elseif sub == "SPELL_AURA_REFRESH" then
+				-- single debuff refresh: counts only if it was a needed (low-time) refresh
+				if bband(srcFlags or 0, FLAG_PLAYER) == 0 then return end
+				refreshSingle(destGUID, def, srcGUID, srcName)
+			else
+				-- single debuffs: fresh APPLIED is an effective cast
 				if bband(srcFlags or 0, FLAG_PLAYER) == 0 then return end
 				applySingle(destGUID, destName, def, srcGUID, srcName)
 			end
@@ -398,12 +483,57 @@ local function handleCLEU()
 	end
 end
 
+-- ----------------------------------------------------------------- roster --
+-- Keep EVERY warrior in the raid on the board (even at 0 sunders) so nobody hides
+-- from the leaderboard, and drop entries that have left the group with nothing to
+-- show so the board doesn't accrue stale names. Warriors who have actually scored
+-- (total > 0) are kept regardless of membership -- they earned their row.
+
+local function forEachGroupUnit(fn)
+	if IsInRaid() then
+		for i = 1, GetNumGroupMembers() do fn("raid" .. i) end
+	elseif IsInGroup() then
+		fn("player")
+		for i = 1, GetNumGroupMembers() - 1 do fn("party" .. i) end
+	end
+end
+
+local function scanRoster()
+	local warriors, inGroup = {}, {}
+	forEachGroupUnit(function(unit)
+		local guid = UnitGUID(unit)
+		if not guid then return end
+		inGroup[guid] = true
+		-- Only auto-seed RAID warriors (the "everyone's on the board" ask is raid-scoped).
+		if IsInRaid() then
+			local _, class = UnitClass(unit)
+			if class == "WARRIOR" then
+				warriors[guid] = true
+				ensurePlayer(guid, (UnitName(unit)), "WARRIOR")
+			end
+		end
+	end)
+	session.rosterWarriors = warriors
+
+	-- Prune only when we actually have a roster (solo => nothing to be stale against).
+	-- Self is always in inGroup while grouped, so your own in-progress row is never dropped.
+	if next(inGroup) then
+		for guid, p in pairs(session.points) do
+			if not inGroup[guid] and (not p.total or p.total <= 0) then
+				session.points[guid] = nil
+			end
+		end
+	end
+end
+M.ScanRoster = scanRoster
+
 -- --------------------------------------------------------------- sessions --
 
 function Core:Reset()
 	wipe(session.points)
 	wipe(tracked)
 	wipe(baseArmorCache)
+	scanRoster()  -- immediately re-seed the current raid's warriors at 0
 	if M.db and M.db.session then M.db.session.label = session.label end
 	if M.UI then M.UI:Refresh() end
 end
@@ -458,6 +588,7 @@ local function updateSession(quiet)
 		persist()
 	end
 
+	scanRoster()  -- seed/prune raid warriors on join/leave/zone/login
 	if M.UI then M.UI:UpdateVisibility() end
 end
 M.UpdateSession = updateSession
@@ -543,6 +674,10 @@ function M.OnSlash(msg)
 	if msg == "reset" then
 		Core:Reset()
 		print("|cffff8000Sunderboard|r: leaderboard reset.")
+	elseif msg == "debug" then
+		debug = not debug
+		print("|cffff8000Sunderboard|r: miss-event debug " .. (debug and "ON" or "OFF")
+			.. " (prints each tracked-debuff SPELL_MISSED to chat).")
 	elseif msg == "options" or msg == "opt" or msg == "config" then
 		core.OpenSettings()
 	elseif msg == "show" then
@@ -557,7 +692,6 @@ function M.OnSlash(msg)
 		print("  /sb            toggle the board on/off")
 		print("  /sb show|hide  show / hide the board")
 		print("  /sb reset      clear the leaderboard")
-		print("  /sb mine|all|off   fall-off alerts (default: mine)")
 		print("  /sb options    open settings")
 	end
 end
