@@ -1,0 +1,12 @@
+## Interface: 11509
+## Title: Mobber
+## Notes: Per-mob grid of enemy debuffs with their own cooldown timers.
+## Author: donaldpminer
+## Version: 0.2.0
+## Dependencies: AssfishAquarium
+## Category: ASSFISH AQUARIUM
+## X-AAQ-Key: mob
+## X-AAQ-HubCategory: Combat
+
+Core.lua
+Window.lua

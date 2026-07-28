@@ -17,7 +17,7 @@
 	    the umbrella core provides M.db, the one minimap button and the Settings page.
 ----------------------------------------------------------------------------]]
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 -- Display name is "Shaman Stuff"; the internal key stays "bb". Enabled by default only on
 -- Shamans (the class check runs at first-run seed time, i.e. login, when the class is known).
@@ -238,7 +238,7 @@ function M.SeedDB()
 	if db.wfDropSound == nil then db.wfDropSound = true end   -- play a cue when WF drops
 	db.wfSoundIdx = db.wfSoundIdx or 1
 	if db.wfMeleeOnly == nil then db.wfMeleeOnly = false end  -- party frame: hide non-melee rows
-	if db.windfury == nil then db.windfury = true end         -- the always-on announcer service
+	-- (Windfury broadcasting is its own addon now -- no flag here.)
 end
 
 --------------------------------------------------------------------------------
@@ -336,9 +336,10 @@ function M.OnSlash(msg)
 		if M.Display_ApplyPosition then M.Display_ApplyPosition() end
 		printMsg("heal display position reset to center.")
 	elseif cmd == "wf" then
-		local all = M.WF_GetAll and M.WF_GetAll() or {}
+		local WF = ns.windfury
+		local all = (WF and WF.WF_GetAll and WF.WF_GetAll()) or {}
 		if #all == 0 then
-			printMsg("no Windfury heard yet (need a group with WF Now / Shaman Stuff users).")
+			printMsg("no Windfury heard yet (needs the Windfury addon enabled + a group with WF users).")
 		else
 			printMsg("Windfury status heard (" .. #all .. "):")
 			for _, e in ipairs(all) do

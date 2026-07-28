@@ -1,0 +1,13 @@
+## Interface: 11509
+## Title: FF Tracker
+## Notes: Tracks your debuffs and crowd control on the target and nearby enemies.
+## Author: donaldpminer
+## Version: 0.2.0
+## Dependencies: AssfishAquarium
+## Category: ASSFISH AQUARIUM
+## X-AAQ-Key: ff
+## X-AAQ-HubCategory: Combat
+
+Data.lua
+Core.lua
+Window.lua

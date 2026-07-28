@@ -23,7 +23,14 @@
 	on. A module's `default` means "recommended in the wizard", not "auto-enable".
 ----------------------------------------------------------------------------]]
 
-local ADDON, ns = ...
+local ADDON = ...
+
+-- The Core exposes its shared surface as a GLOBAL. Each module now ships as its OWN addon
+-- (AssfishAquarium_Mobber, _Sunderboard, ...), and separate addons do NOT share this addon's
+-- private `...` table -- so they reach Core through this global instead. Core is every module
+-- addon's declared dependency, so it (and this table) always loads first.
+AssfishAquarium = AssfishAquarium or {}
+local ns = AssfishAquarium
 
 ns.ADDON = ADDON
 ns.core = ns.core or {}
@@ -215,10 +222,15 @@ local function stateStore()
 	return ns.cdb.moduleState
 end
 
+-- Now that each module ships as its OWN addon, "enabled" = the addon being loaded (Blizzard
+-- AddOn list / Hub, applied on reload). So a module that IS loaded should be ACTIVE: this
+-- per-char state now only remembers its LOCK ("unlocked" default so a fresh window can be
+-- positioned; "locked" once pinned). "hidden" survives only as a live per-window hide (a
+-- module's own /slash hide), never the primary on/off.
 function core.GetModuleState(key) -- "hidden" | "unlocked" | "locked"
 	local st = stateStore()[key]
 	if st == "unlocked" or st == "locked" or st == "hidden" then return st end
-	return "hidden" -- opt-in: nothing enables until the user chooses (setup wizard / Hub)
+	return "unlocked" -- loaded => shown; the addon being loaded is the "enabled" gate
 end
 
 function core.IsEnabled(key)
@@ -238,6 +250,65 @@ function core.IsRecommended(key)
 	return d and true or false
 end
 
+--------------------------------------------------------------------------------
+-- Sub-addon management. Each tool ships as its OWN addon ("AssfishAquarium_<X>"); enabling /
+-- disabling one is the Blizzard addon enable state (per character, applied on reload). These
+-- wrappers feature-detect C_AddOns (modern) vs the legacy globals so the Hub can list + toggle
+-- every tool -- including ones that aren't currently loaded.
+--------------------------------------------------------------------------------
+core.SUITE_PREFIX = "AssfishAquarium_"
+
+local CA = C_AddOns or {}
+local _GetNum      = CA.GetNumAddOns       or GetNumAddOns
+local _GetInfo     = CA.GetAddOnInfo       or GetAddOnInfo
+local _GetMeta     = CA.GetAddOnMetadata   or GetAddOnMetadata
+local _IsLoaded    = CA.IsAddOnLoaded      or IsAddOnLoaded
+local _Enable      = CA.EnableAddOn        or EnableAddOn
+local _Disable     = CA.DisableAddOn       or DisableAddOn
+local _EnableState = CA.GetAddOnEnableState or GetAddOnEnableState
+
+function core.AddonMeta(name, field) return _GetMeta and _GetMeta(name, field) or nil end
+function core.AddonLoaded(name) return (_IsLoaded and _IsLoaded(name)) and true or false end
+
+-- Is this addon set to load for THIS character? (0 = disabled, 1/2 = enabled.)
+function core.AddonEnabled(name)
+	if not _EnableState then return core.AddonLoaded(name) end
+	local player = UnitName("player")
+	local st = _EnableState(name, player)        -- modern (name, character)
+	if type(st) ~= "number" then st = _EnableState(player, name) end -- legacy (character, name)
+	return (tonumber(st) or 0) ~= 0
+end
+
+function core.SetAddonEnabled(name, on)
+	local player = UnitName("player")
+	if on then
+		if _Enable then pcall(_Enable, name, player) end
+	else
+		if _Disable then pcall(_Disable, name, player) end
+	end
+end
+
+-- Iterate every tool addon (name starts with the suite prefix; the Core addon itself has no
+-- underscore so it's skipped). fn(name).
+function core.EachSuiteAddon(fn)
+	local n = (_GetNum and _GetNum()) or 0
+	for i = 1, n do
+		local name = _GetInfo and _GetInfo(i)
+		if name and name:sub(1, #core.SUITE_PREFIX) == core.SUITE_PREFIX then fn(name) end
+	end
+end
+
+-- First login on a character: seed default addon-enable states ONCE (per-char flag, so we never
+-- re-disable something the user later turned back on). Rule: Windfury is useless on Alliance
+-- (no Shamans), so default it OFF there.
+function core.SeedAddonDefaults()
+	if not ns.cdb or ns.cdb.addonSeeded then return end
+	ns.cdb.addonSeeded = true
+	if UnitFactionGroup("player") == "Alliance" and core.AddonEnabled("AssfishAquarium_Windfury") then
+		core.SetAddonEnabled("AssfishAquarium_Windfury", false) -- effective next reload/login
+	end
+end
+
 -- First-run setup gate + "new module since last visit" tracking, both PER-CHARACTER.
 function core.IsSetupDone() return ns.cdb and ns.cdb.setupDone and true or false end
 function core.MarkSetupDone() if ns.cdb then ns.cdb.setupDone = true end end
@@ -247,6 +318,12 @@ function core.IsNewModule(key) return not seenStore()[key] end
 function core.MarkModuleSeen(key) seenStore()[key] = true end
 function core.MarkAllSeen()
 	core.EachAvailableModule(function(M) seenStore()[M.key] = true end)
+	-- also mark installed-but-DISABLED tool addons seen (they never load/register, so the loop
+	-- above misses them); their key comes from the TOC. Otherwise their NEW tag never clears.
+	core.EachSuiteAddon(function(name)
+		local k = core.AddonMeta(name, "X-AAQ-Key")
+		if k then seenStore()[k] = true end
+	end)
 	if core.RefreshMinimap then core.RefreshMinimap() end -- clear the "new" badge
 end
 function core.CountNewModules()

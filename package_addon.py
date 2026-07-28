@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Package the Assfish Aquarium addon into ``dist/AssfishAquarium.zip``.
+"""Package the ASSFISH AQUARIUM suite into ``dist/AssfishAquarium.zip``.
 
-The zip is what you upload to CurseForge (see publish_curseforge.py) and is also
-handy for a manual install. The addon is staged under its WoW-required top-level
-folder name (``AssfishAquarium/``) inside the archive.
+The suite is now MULTIPLE addons -- the Core plus one addon per tool -- so the zip
+contains several top-level folders (each a WoW addon). This is what you upload to
+CurseForge (see publish_curseforge.py) and is also handy for a manual install.
 
-Uses Python's stdlib ``zipfile`` (no external ``zip`` binary needed), so it runs
-the same on Windows / Git Bash / macOS / Linux.
+Uses Python's stdlib ``zipfile`` (no external ``zip`` binary), so it runs the same
+on Windows / Git Bash / macOS / Linux.
 
     python package_addon.py            # -> dist/AssfishAquarium.zip
 """
@@ -15,12 +15,19 @@ import zipfile
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-ADDON_NAME = "AssfishAquarium"       # WoW-required top-level folder name (matches the .toc)
-ADDON_DIR = ROOT / ADDON_NAME        # install-ready source folder (tracked in git)
 DIST = ROOT / "dist"
-ZIP = DIST / f"{ADDON_NAME}.zip"
+ZIP = DIST / "AssfishAquarium.zip"
 
-# Things we never want inside the packaged addon.
+# The Core addon plus one addon per tool (each a top-level folder in the zip).
+ADDONS = [
+    "AssfishAquarium",
+    "AssfishAquarium_Mobber",
+    "AssfishAquarium_FFTracker",
+    "AssfishAquarium_Sunderboard",
+    "AssfishAquarium_ButtBass",
+    "AssfishAquarium_Windfury",
+]
+
 EXCLUDE_NAMES = {".DS_Store", "Thumbs.db", "__pycache__", ".git"}
 EXCLUDE_SUFFIXES = (".swp", ".swo", ".orig", ".bak", "~")
 
@@ -32,13 +39,15 @@ def _included(path: Path) -> bool:
 
 
 def main() -> int:
-    if not ADDON_DIR.is_dir():
-        print(f"ERROR: addon folder not found: {ADDON_DIR}", file=sys.stderr)
+    missing = [a for a in ADDONS if not (ROOT / a).is_dir()]
+    if missing:
+        print(f"ERROR: addon folder(s) not found: {', '.join(missing)}", file=sys.stderr)
         return 1
-    toc = ADDON_DIR / f"{ADDON_NAME}.toc"
-    if not toc.exists():
-        print(f"ERROR: {toc.name} not found in {ADDON_DIR}", file=sys.stderr)
-        return 1
+    for a in ADDONS:
+        toc = ROOT / a / f"{a}.toc"
+        if not toc.exists():
+            print(f"ERROR: {toc.name} not found in {a}", file=sys.stderr)
+            return 1
 
     DIST.mkdir(exist_ok=True)
     if ZIP.exists():
@@ -46,19 +55,28 @@ def main() -> int:
 
     count = 0
     with zipfile.ZipFile(ZIP, "w", zipfile.ZIP_DEFLATED) as zf:
-        for path in sorted(ADDON_DIR.rglob("*")):
-            if not path.is_file() or not _included(path):
-                continue
-            # Stage every file under the top-level "AssfishAquarium/" folder WoW expects.
-            arcname = Path(ADDON_NAME) / path.relative_to(ADDON_DIR)
-            zf.write(path, arcname.as_posix())
-            count += 1
+        for a in ADDONS:
+            addon_dir = ROOT / a
+            for path in sorted(addon_dir.rglob("*")):
+                if not path.is_file() or not _included(path):
+                    continue
+                # Stage each file under its addon's top-level folder (forward slashes).
+                arcname = (Path(a) / path.relative_to(addon_dir)).as_posix()
+                zf.write(path, arcname)
+                count += 1
 
     if count == 0:
-        print(f"ERROR: no files packaged from {ADDON_DIR}", file=sys.stderr)
+        print(f"ERROR: no files packaged", file=sys.stderr)
         return 1
 
-    print(f"packaged {count} files -> {ZIP} ({ZIP.stat().st_size / 1024:.1f} KB)")
+    # sanity: no backslash entries (breaks extraction on macOS/Linux)
+    with zipfile.ZipFile(ZIP) as zf:
+        bad = sum("\\" in n for n in zf.namelist())
+    if bad:
+        print(f"ERROR: {bad} entries contain backslashes", file=sys.stderr)
+        return 1
+
+    print(f"packaged {count} files from {len(ADDONS)} addons -> {ZIP} ({ZIP.stat().st_size / 1024:.1f} KB)")
     return 0
 
 

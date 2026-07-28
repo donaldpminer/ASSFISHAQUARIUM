@@ -16,7 +16,7 @@
 	turn enemy nameplates on for timers on everything you can see.
 ----------------------------------------------------------------------------]]
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 local M = core.RegisterModule({
 	key = "mob", title = "Mobber", perChar = true, default = true,

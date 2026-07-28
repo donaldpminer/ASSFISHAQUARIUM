@@ -20,7 +20,7 @@
 	    spells = { [key] = { enabled, color } } }
 ----------------------------------------------------------------------------]]
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 local M = ns.modules.ff
 

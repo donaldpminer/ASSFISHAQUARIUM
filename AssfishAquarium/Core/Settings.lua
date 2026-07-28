@@ -11,7 +11,7 @@
 	drivable from the minimap dropdown + slash commands).
 ----------------------------------------------------------------------------]]
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 local W = core.widgets
 
@@ -24,15 +24,15 @@ function core.RefreshSettingsUI()
 	for _, fn in ipairs(settingsSyncs) do fn() end
 end
 
--- A Display tri-state (Disabled/Unlocked/Locked) a module drops into its own panel wherever
--- it likes; drives core.SetModuleState. Returns the radio row.
+-- A Lock toggle a module drops into its own panel. Enabling/disabling the tool is done at the
+-- ADDON level now (Hub / AddOns list), so this only controls whether the window is pinned. Kept
+-- the name core.DisplayControl so module BuildSettings calls don't change. Returns the checkbox.
 function core.DisplayControl(panel, x, y, M)
-	local row = W.radioRow(panel, x, y, "Display:",
-		{ { text = "Disabled", value = "hidden" }, { text = "Unlocked", value = "unlocked" }, { text = "Locked", value = "locked" } },
-		function() return core.GetModuleState(M.key) end,
-		function(v) core.SetModuleState(M.key, v) end)
-	settingsSyncs[#settingsSyncs + 1] = row.sync
-	return row
+	local cb = W.check(panel, x, y, "Lock window in place",
+		function() return core.GetModuleState(M.key) == "locked" end,
+		function(v) core.SetLocked(M.key, v) end)
+	settingsSyncs[#settingsSyncs + 1] = cb.sync
+	return cb
 end
 
 function core.AddSubcategory(M)
@@ -49,15 +49,15 @@ local function buildParentPanel(f)
 	title:SetTextColor(1, 0.82, 0)
 	local sub = f:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
 	sub:SetPoint("TOPLEFT", 16, -40)
-	sub:SetText("Enable the tools you want. Each has its own page in the list at the left.")
-	local y = -70
-	core.EachAvailableModule(function(M)
-		local cb = W.check(f, 16, y, "Enable " .. M.title,
-			function() return core.IsEnabled(M.key) end,
-			function(v) core.SetEnabled(M.key, v) end) -- honors the module's last lock state
-		settingsSyncs[#settingsSyncs + 1] = cb.sync
-		y = y - 26
-	end)
+	sub:SetPoint("RIGHT", f, "RIGHT", -16, 0)
+	sub:SetJustifyH("LEFT")
+	sub:SetText("Each tool is its own addon. Turn tools on/off in the Hub (or the AddOns list); each tool's own page is in the list at the left.")
+
+	local openHub = CreateFrame("Button", nil, f, "UIPanelButtonTemplate")
+	openHub:SetSize(150, 24)
+	openHub:SetPoint("TOPLEFT", 16, -78)
+	openHub:SetText("Open the Hub")
+	openHub:SetScript("OnClick", function() if core.ToggleHub then core.ShowHub() end end)
 end
 
 -- Called by Boot at login, after SVs are loaded and every module has registered.

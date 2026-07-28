@@ -29,7 +29,7 @@
 -- disabled module scores nothing. The board's DATA persists in the account SV
 -- (M.db) across enable/disable and /reload.
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 local M = ns.modules.sb
 local D = M.Data
@@ -680,18 +680,16 @@ function M.OnSlash(msg)
 			.. " (prints each tracked-debuff SPELL_MISSED to chat).")
 	elseif msg == "options" or msg == "opt" or msg == "config" then
 		core.OpenSettings()
-	elseif msg == "show" then
-		if core.GetModuleState("sb") == "hidden" then core.SetModuleState("sb", "unlocked") end
-	elseif msg == "hide" then
-		core.SetModuleState("sb", "hidden")
-	elseif msg == "" or msg == "toggle" then
+	elseif msg == "" or msg == "lock" or msg == "toggle" then
+		-- toggle lock only (enabling/disabling the tool is addon-level now), matching the
+		-- other modules -- never write a persistent "hidden" the Hub can't see or reverse.
 		local s = core.GetModuleState("sb")
-		core.SetModuleState("sb", (s == "hidden") and "unlocked" or "hidden")
+		core.SetModuleState("sb", s == "unlocked" and "locked" or "unlocked")
 	else
 		print("|cffff8000Sunderboard|r commands:")
-		print("  /sb            toggle the board on/off")
-		print("  /sb show|hide  show / hide the board")
+		print("  /sb            lock / unlock the board")
 		print("  /sb reset      clear the leaderboard")
 		print("  /sb options    open settings")
+		print("  (enable/disable Sunderboard in the AddOns list or the Hub, /aq)")
 	end
 end

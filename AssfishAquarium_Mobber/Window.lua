@@ -19,7 +19,7 @@
 	OmniCC / tullaCTC are disabled on the swipe. Saved settings: M.db (schema in Core.lua).
 ----------------------------------------------------------------------------]]
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 local M = ns.modules.mob
 local W = core.widgets

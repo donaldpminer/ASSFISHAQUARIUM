@@ -1,11 +1,12 @@
 ## Interface: 11509
 ## Title: ASSFISH AQUARIUM
-## Notes: Umbrella for Donald's Classic Era addons (Mobber, FF Tracker, Sunderboard, Shaman Stuff) with unified options and one minimap button.
+## Notes: Core + shared UI for Donald's Classic Era suite. Each tool (Mobber, FF Tracker, Sunderboard, Shaman Stuff) is its own addon you can toggle in this list or in the Hub.
 ## Author: donaldpminer
-## Version: 0.1.0
+## Version: 0.2.0
 ## SavedVariables: AssfishAquariumDB
 ## SavedVariablesPerCharacter: AssfishAquariumCharDB
 ## IconTexture: Interface\Icons\INV_Misc_Fish_24
+## Category: ASSFISH AQUARIUM
 
 # --- shared core (order = load order) ---
 Core\Namespace.lua
@@ -13,24 +14,5 @@ Core\Lib_Widgets.lua
 Core\Lib_Util.lua
 Core\Settings.lua
 Core\Hub.lua
-Core\Onboarding.lua
 Core\Minimap.lua
 Core\Boot.lua
-
-# --- modules (each: first-loaded file runs core.RegisterModule) ---
-Modules\Mobber\Core.lua
-Modules\Mobber\Window.lua
-
-Modules\FFTracker\Data.lua
-Modules\FFTracker\Core.lua
-Modules\FFTracker\Window.lua
-
-Modules\Sunderboard\Data.lua
-Modules\Sunderboard\Core.lua
-Modules\Sunderboard\UI.lua
-
-Modules\ButtBass\Core.lua
-Modules\ButtBass\Display.lua
-Modules\ButtBass\Windfury.lua
-Modules\ButtBass\WFDisplay.lua
-Modules\ButtBass\Options.lua

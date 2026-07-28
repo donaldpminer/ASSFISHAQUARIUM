@@ -3,14 +3,13 @@
 
 	Replaces the standalone options window (which was opened by the old minimap
 	button). Uses the shared core widgets. Sections:
-	  * Display tri-state (Disabled / Unlocked / Locked) via core.DisplayControl.
-	  * Windfury announcements checkbox -> toggles the always-on SERVICE live
-	    (core.GetDB("bb").windfury, default ON) via M.WF_SetEnabled.
+	  * Lock control via core.DisplayControl (enable/disable the tool is addon-level now).
+	  * A note that Windfury broadcasting is its own addon.
 	  * Heal Tracker: Enabled, amount-side layout, size.
 	  * Party Frame: Enabled, size, WF-drop sound toggle + a UIDropDownMenu sound picker.
 ----------------------------------------------------------------------------]]
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 local M = ns.modules.bb
 local W = core.widgets
@@ -26,23 +25,20 @@ function M.BuildSettings(panel)
 	title:SetText("Shaman Stuff")
 	title:SetTextColor(1, 0.82, 0)
 
-	core.DisplayControl(panel, 14, -46, M) -- shared Hidden / Unlocked / Locked tri-state
+	core.DisplayControl(panel, 14, -46, M) -- shared Lock control
 
-	-- Windfury announcer (the always-on service; runs for every class regardless of
-	-- whether the ButtBass panels are shown).
-	reg(W.check(panel, 16, -76, "Windfury announcements (broadcast + receive)",
-		function() return core.GetDB("bb").windfury ~= false end,
-		function(v) if M.WF_SetEnabled then M.WF_SetEnabled(v) end end))
 	local wfNote = panel:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-	wfNote:SetPoint("TOPLEFT", 40, -98)
-	wfNote:SetText("Runs for all classes, even while Shaman Stuff is disabled.")
+	wfNote:SetPoint("TOPLEFT", 16, -80)
+	wfNote:SetPoint("RIGHT", panel, "RIGHT", -16, 0)
+	wfNote:SetJustifyH("LEFT")
+	wfNote:SetText("Windfury broadcasting is its own addon ('ASSFISH AQUARIUM - Windfury') -- enable it in the Hub or the AddOns list.")
 
 	-- ===== Heal Tracker =====
 	local h1 = panel:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	h1:SetPoint("TOPLEFT", 16, -124)
+	h1:SetPoint("TOPLEFT", 16, -110)
 	h1:SetText("|cff66ccffHeal Tracker|r")
 
-	reg(W.check(panel, 16, -146, "Enabled",
+	reg(W.check(panel, 16, -132, "Enabled",
 		function() return M.db.chEnabled ~= false end,
 		function(v)
 			M.db.chEnabled = v

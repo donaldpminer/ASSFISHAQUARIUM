@@ -1,0 +1,14 @@
+## Interface: 11509
+## Title: Shaman Stuff
+## Notes: Restoration Shaman heal tracker and Windfury party frame. (Windfury broadcasting itself lives in the Core addon and runs for everyone.)
+## Author: donaldpminer
+## Version: 0.2.0
+## Dependencies: AssfishAquarium
+## Category: ASSFISH AQUARIUM
+## X-AAQ-Key: bb
+## X-AAQ-HubCategory: Class
+
+Core.lua
+Display.lua
+WFDisplay.lua
+Options.lua

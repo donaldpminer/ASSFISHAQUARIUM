@@ -18,7 +18,7 @@
 	  * assignUnits + the lock preview guard every secure change with InCombatLockdown.
 ----------------------------------------------------------------------------]]
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 local M = ns.modules.bb
 
@@ -145,11 +145,12 @@ end
 
 -- WF status for a button: hasWF, absolute expiry. Self reads its own imbue.
 local function getWF(b, now)
+	local WF = ns.windfury                      -- nil if the Windfury addon isn't enabled
 	if UnitIsUnit(b.unit, "player") then
 		local mh, expMs, _, enchid = GetWeaponEnchantInfo()
-		if mh and enchid and M.WF_ENCHANTS[enchid] then return true, now + (expMs or 0) / 1000 end
+		if mh and enchid and WF and WF.WF_ENCHANTS[enchid] then return true, now + (expMs or 0) / 1000 end
 	else
-		local rec = M.wf[b.guid]
+		local rec = WF and WF.wf[b.guid]
 		if rec and rec.hasWF and rec.expiresAt and rec.expiresAt > now then return true, rec.expiresAt end
 	end
 	return false, nil

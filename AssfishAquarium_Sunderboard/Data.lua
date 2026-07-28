@@ -11,7 +11,7 @@
 -- file, so it registers the module with the shared core (account-wide SV). Every
 -- other Sunderboard file grabs `local M = ns.modules.sb` instead.
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 local M = core.RegisterModule({
 	key = "sb", title = "Sunderboard", perChar = false, default = true,

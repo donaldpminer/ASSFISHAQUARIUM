@@ -5,7 +5,7 @@
 -- rename ns.* -> M.*) before replacing this file. Detection is by aura NAME (rank-agnostic);
 -- `ids` gives the icon + a fallback.
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 local M = core.RegisterModule({
 	key = "ff", title = "FF Tracker", perChar = true, default = true,

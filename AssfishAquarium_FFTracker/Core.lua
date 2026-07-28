@@ -14,7 +14,7 @@
 	it while the mob is around, dropping it on death or after a grace period.
 ----------------------------------------------------------------------------]]
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 local M = ns.modules.ff
 

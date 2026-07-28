@@ -12,7 +12,7 @@
 	you haven't looked at yet.
 ----------------------------------------------------------------------------]]
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 
 local RADIUS = 80

@@ -1,0 +1,10 @@
+## Interface: 11509
+## Title: Windfury
+## Notes: Shares Windfury weapon-imbue status across the group (interops with WF Now). |cffffd200Horde/Shaman groups: please keep this ENABLED|r so your Shamans can see who has the buff. Useless on Alliance (no Shamans).
+## Author: donaldpminer
+## Version: 0.2.0
+## Dependencies: AssfishAquarium
+## Category: ASSFISH AQUARIUM
+## X-AAQ-HubCategory: Raid
+
+Windfury.lua

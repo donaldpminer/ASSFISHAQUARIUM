@@ -10,7 +10,7 @@
 	(Lua files load before any event), so the registry is complete here.
 ----------------------------------------------------------------------------]]
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 
 local f = CreateFrame("Frame")
@@ -33,8 +33,13 @@ f:SetScript("OnEvent", function(_, event)
 	if core.InitSettings then core.InitSettings() end
 	if core.BuildMinimap then core.BuildMinimap() end
 	if core.StartServices then core.StartServices() end -- always-on services (e.g. Windfury)
-	core.StartModules()                                 -- apply saved hidden/unlocked/locked
-	if core.MaybeShowOnboarding then core.MaybeShowOnboarding() end -- first-run setup wizard
+	core.StartModules()                                 -- enable every loaded module + apply lock
+	if core.SeedAddonDefaults then core.SeedAddonDefaults() end -- e.g. Windfury off on Alliance
+	-- First login on this character: pop the Hub once so they see what's installed + how to manage it.
+	if core.IsSetupDone and not core.IsSetupDone() then
+		core.MarkSetupDone()
+		if core.ShowHub then core.ShowHub() end
+	end
 end)
 
 --------------------------------------------------------------------------------
@@ -55,8 +60,6 @@ SlashCmdList.ASSFISH = function(msg)
 	key = key and key:lower() or ""
 	if key == "" or key == "hub" then
 		core.ToggleHub()
-	elseif key == "setup" then
-		if core.ShowOnboarding then core.ShowOnboarding(true) end
 	elseif key == "settings" or key == "options" or key == "config" then
 		core.OpenSettings()
 	elseif ns.modules[key] then

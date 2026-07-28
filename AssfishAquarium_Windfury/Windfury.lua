@@ -1,5 +1,5 @@
 --[[--------------------------------------------------------------------------
-	ButtBass - Windfury comms (an ALWAYS-ON SERVICE, not part of the module).
+	Windfury comms -- its OWN addon (AssfishAquarium_Windfury), depends on Core.
 
 	Reads Windfury weapon-imbue status off TWO addon-message channels:
 	  * "WF_STATUS"  - the shared WF Now / WindfuryComm protocol (READ ONLY)
@@ -7,20 +7,23 @@
 	We only ever SEND on our own line, so we never risk malforming WF Now's feed;
 	but we still SEE everyone running WF Now because we listen on WF_STATUS too.
 
-	This runs for EVERY class and REGARDLESS of the ButtBass module's enable state --
-	a non-Shaman (or a Shaman with the ButtBass panels hidden) still broadcasts their
-	own WF imbue so other clients can aggregate it. That is why it is a core service:
-	  core.RegisterService("windfury", { Start = ... })
-	The on/off flag lives in the ButtBass DB slice (db.windfury, default ON); the
-	settings checkbox calls M.WF_SetEnabled to start/stop the announcer live.
+	Runs for EVERY class so anyone in the group broadcasts their own WF imbue and the
+	group's Shamans can aggregate it. Being its own addon, "on/off" = the addon being
+	enabled (AddOns list / Hub). It exposes its state on ns.windfury so the (Shaman-only)
+	"Shaman Stuff" party frame can read it when both addons are loaded. It registers a Core
+	service (core.RegisterService) that Core.StartServices starts at login.
 
 	Detection uses GetWeaponEnchantInfo (your own weapon only -- you can't read anyone
 	else's, which is the whole reason this gossip protocol exists).
 ----------------------------------------------------------------------------]]
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
-local M = ns.modules.bb
+-- Windfury state lives on a CORE-owned table (ns.windfury) so the announcer runs for EVERY
+-- class even when the Shaman-only "Shaman Stuff" (ButtBass) addon isn't loaded. When it IS
+-- loaded, its party frame (WFDisplay.lua) reads WF state from here.
+ns.windfury = ns.windfury or {}
+local WF = ns.windfury
 
 --------------------------------------------------------------------------------
 -- Protocol
@@ -32,15 +35,15 @@ local BB_VER     = 1
 -- Windfury Totem weapon-imbue enchant IDs (Classic ranks 1-3). enchid -> rank.
 -- Exposed on M so the party frame (WFDisplay.lua) shares this one definition.
 local WF_ENCHANTS = { [1783] = 1, [563] = 2, [564] = 3 }
-M.WF_ENCHANTS = WF_ENCHANTS
+WF.WF_ENCHANTS = WF_ENCHANTS
 
 local MIN_SEND_INTERVAL = 0.5     -- throttle refresh broadcasts (state changes bypass it)
 
 --------------------------------------------------------------------------------
 -- State
 --------------------------------------------------------------------------------
--- M.wf[guid] = { name, class, hasWF, rank, expiresAt, combat, isdead, source, lastSeen }
-M.wf = {}
+-- WF.wf[guid] = { name, class, hasWF, rank, expiresAt, combat, isdead, source, lastSeen }
+WF.wf = {}
 
 local myGUID
 local eventFrame
@@ -50,11 +53,8 @@ local prefixesDone = false
 local sendPending
 local lastSent, lastHasWF, lastEnchid, lastExpire = 0, nil, nil, nil
 
--- The announcer runs unless db.windfury is explicitly false (default ON).
-local function isOn()
-	local db = core.GetDB("bb")
-	return db.windfury ~= false
-end
+-- This is its OWN addon now: if it's loaded, it runs. Turning it off = disabling the addon
+-- (AddOns list or the Hub). No separate in-addon flag.
 
 --------------------------------------------------------------------------------
 -- helpers
@@ -106,14 +106,14 @@ local function scheduleBroadcast()
 	C_Timer.After(0.15, function() sendPending = false; broadcast(false) end)
 end
 
--- Parse one incoming message (same grammar on both channels) into M.wf.
+-- Parse one incoming message (same grammar on both channels) into WF.wf.
 local function onMessage(prefix, text, source)
 	local guid, enchid, expire, lag = strsplit(":", text)
 	if not guid or guid == myGUID then return end   -- ignore self / malformed
 
 	local enchNum = tonumber(enchid)                -- "nil" -> nil
 	local rank    = enchNum and WF_ENCHANTS[enchNum]
-	local rec     = M.wf[guid] or {}
+	local rec     = WF.wf[guid] or {}
 
 	if rank then
 		local ms  = tonumber(expire) or 0
@@ -134,9 +134,9 @@ local function onMessage(prefix, text, source)
 	rec.class    = class or rec.class
 	rec.source   = source
 	rec.lastSeen = GetTime()
-	M.wf[guid]   = rec
+	WF.wf[guid]   = rec
 
-	if M.WF_OnUpdate then M.WF_OnUpdate(guid, rec) end   -- hook for the party frame
+	if WF.WF_OnUpdate then WF.WF_OnUpdate(guid, rec) end   -- hook for the party frame
 end
 
 --------------------------------------------------------------------------------
@@ -216,21 +216,16 @@ local function stopAnnouncer()
 	lastSent, lastHasWF, lastEnchid, lastExpire = 0, nil, nil, nil
 end
 
--- Called by the settings "Windfury announcements" checkbox to flip the flag + apply live.
-function M.WF_SetEnabled(on)
-	core.GetDB("bb").windfury = on and true or false
-	if on then startAnnouncer() else stopAnnouncer() end
-end
 
 -- Snapshot of currently-known WF, freshest first (for /bb wf and the party frame).
--- Also prunes entries not heard from in a while, so M.wf can't grow without bound
+-- Also prunes entries not heard from in a while, so WF.wf can't grow without bound
 -- across a long session of PUGs (and /bb wf stops listing players who left).
 local STALE_TTL = 120
-function M.WF_GetAll()
+function WF.WF_GetAll()
 	local now, out = GetTime(), {}
-	for guid, rec in pairs(M.wf) do
+	for guid, rec in pairs(WF.wf) do
 		if rec.lastSeen and (now - rec.lastSeen) > STALE_TTL then
-			M.wf[guid] = nil   -- safe: setting an existing field to nil during pairs()
+			WF.wf[guid] = nil   -- safe: setting an existing field to nil during pairs()
 		else
 			out[#out + 1] = {
 				guid = guid, name = rec.name, class = rec.class, source = rec.source,
@@ -248,7 +243,5 @@ end
 -- service registration (core.StartServices calls Start once at login)
 --------------------------------------------------------------------------------
 core.RegisterService("windfury", {
-	Start = function()
-		if isOn() then startAnnouncer() end
-	end,
+	Start = function() startAnnouncer() end,
 })

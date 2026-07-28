@@ -5,7 +5,7 @@
 	raid-target marker atlas), collected here so the magic numbers live in ONE place.
 ----------------------------------------------------------------------------]]
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 
 -- The shared window backdrop used by every module window (dark parchment + tooltip border).

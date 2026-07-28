@@ -9,7 +9,7 @@
 	Each factory returns a widget with a :sync() that re-reads its value from get().
 ----------------------------------------------------------------------------]]
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 local W = {}
 core.widgets = W

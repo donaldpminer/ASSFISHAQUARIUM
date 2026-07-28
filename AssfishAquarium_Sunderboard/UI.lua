@@ -11,7 +11,7 @@
 -- just widens the bars. Until it's resized once it auto-grows to fit its rows.
 -- Hovering a row shows a per-debuff breakdown (casts / landed / outcome %).
 
-local ADDON, ns = ...
+local ns = AssfishAquarium
 local core = ns.core
 local W = core.widgets
 local M = ns.modules.sb
