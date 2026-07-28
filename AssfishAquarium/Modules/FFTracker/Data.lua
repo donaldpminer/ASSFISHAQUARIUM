@@ -7,7 +7,11 @@
 
 local ADDON, ns = ...
 local core = ns.core
-local M = core.RegisterModule({ key = "ff", title = "FF Tracker", perChar = true, default = true })
+local M = core.RegisterModule({
+	key = "ff", title = "FF Tracker", perChar = true, default = true,
+	category = "Combat", source = "mine", hasFrame = true,
+	desc = "Tracks your debuffs and crowd control on the target and nearby enemies.",
+})
 
 M.FALLBACK_ICON = 134400 -- INV_Misc_QuestionMark
 

@@ -53,8 +53,8 @@ local function buildParentPanel(f)
 	local y = -70
 	core.EachAvailableModule(function(M)
 		local cb = W.check(f, 16, y, "Enable " .. M.title,
-			function() return core.GetModuleState(M.key) ~= "hidden" end,
-			function(v) core.SetModuleState(M.key, v and "unlocked" or "hidden") end)
+			function() return core.IsEnabled(M.key) end,
+			function(v) core.SetEnabled(M.key, v) end) -- honors the module's last lock state
 		settingsSyncs[#settingsSyncs + 1] = cb.sync
 		y = y - 26
 	end)

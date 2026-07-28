@@ -18,7 +18,11 @@
 
 local ADDON, ns = ...
 local core = ns.core
-local M = core.RegisterModule({ key = "mob", title = "Mobber", perChar = true, default = true })
+local M = core.RegisterModule({
+	key = "mob", title = "Mobber", perChar = true, default = true,
+	category = "Combat", source = "mine", hasFrame = true,
+	desc = "Per-mob grid of enemy debuffs with their own cooldown timers.",
+})
 
 M.MAX_MOBS = 10   -- most mob rows shown at once
 M.NUM_SLOTS = 16  -- debuff slots per mob (the Classic debuff cap)

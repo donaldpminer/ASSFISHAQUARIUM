@@ -15,7 +15,12 @@
 	  "hidden"    disabled entirely -- no frames, no events, no tickers.
 	  "unlocked"  enabled + its window(s) shown and movable.
 	  "locked"    enabled + shown but pinned / click-through.
-	The minimap dropdown and the Settings page both drive this via core.SetModuleState.
+	The Hub, the setup wizard, and the Settings page drive this via core.SetModuleState. The Hub
+	presents it as two plain toggles (Enabled + Lock) via core.SetEnabled / core.SetLocked.
+
+	State is PER-CHARACTER (an alt can run a different set of tools) and OPT-IN: nothing enables
+	itself on a fresh character -- the first-run setup wizard (Onboarding.lua) asks what to turn
+	on. A module's `default` means "recommended in the wizard", not "auto-enable".
 ----------------------------------------------------------------------------]]
 
 local ADDON, ns = ...
@@ -52,8 +57,8 @@ function core.RegisterModule(spec)
 	end
 	M.title = spec.title or spec.key
 	M.perChar = spec.perChar and true or false
-	-- default may be a boolean OR a function evaluated at first-run seed time (login) -- e.g.
-	-- a module that should default on only for a given class checks UnitClass then. nil => true.
+	-- default may be a boolean OR a function -- it now means "RECOMMENDED on first setup" (the
+	-- setup wizard pre-checks it), NOT "auto-enable". Nothing auto-enables; the user opts in.
 	if spec.default == nil then M.default = true else M.default = spec.default end
 	M.Enable = spec.Enable
 	M.Disable = spec.Disable
@@ -63,7 +68,30 @@ function core.RegisterModule(spec)
 	-- unavailable module (e.g. Shaman Stuff for a non-Shaman) is registered so its always-on
 	-- service still has an M/DB, but it never appears in the minimap, settings, or gets enabled.
 	M.available = spec.available -- nil = always available
+
+	-- Catalog metadata (the meta-manager surfaces these in the Hub + setup wizard).
+	M.category    = spec.category or "Other"        -- grouping in the Hub
+	M.source      = spec.source or "mine"           -- "mine" | "adopted"
+	M.author      = spec.author                     -- original author (adopted addons)
+	M.adoptedFrom = spec.adoptedFrom                -- original addon name / URL
+	M.desc        = spec.desc or ""                 -- one-line summary
+	M.hasFrame    = spec.hasFrame and true or false -- owns a movable window (lock/unlock applies)
+	M.icon        = spec.icon                       -- optional texture path for the Hub row
+	M.version     = spec.version                    -- optional per-module version string
 	return M
+end
+
+-- Distinct module categories present, in first-registration order (for Hub grouping).
+function core.Categories()
+	local order, seen = {}, {}
+	for _, key in ipairs(ns.moduleOrder) do
+		local M = ns.modules[key]
+		if M and core.IsAvailable(key) and not seen[M.category] then
+			seen[M.category] = true
+			order[#order + 1] = M.category
+		end
+	end
+	return order
 end
 
 -- Is a module available to this player? (class-gated modules answer via a function.)
@@ -180,26 +208,67 @@ end
 -- Module lifecycle (enable / disable / tri-state), stored in the account SV so it
 -- survives reload. Boot restores it at login; the minimap + Settings drive it live.
 --------------------------------------------------------------------------------
+-- Module enable/lock state is now PER-CHARACTER (an alt can run a different set of tools),
+-- which is the fix for "settings shared across every character". Lives in the per-char SV.
 local function stateStore()
-	ns.db.moduleState = ns.db.moduleState or {}
-	return ns.db.moduleState
+	ns.cdb.moduleState = ns.cdb.moduleState or {}
+	return ns.cdb.moduleState
 end
 
 function core.GetModuleState(key) -- "hidden" | "unlocked" | "locked"
 	local st = stateStore()[key]
 	if st == "unlocked" or st == "locked" or st == "hidden" then return st end
+	return "hidden" -- opt-in: nothing enables until the user chooses (setup wizard / Hub)
+end
+
+function core.IsEnabled(key)
+	return core.GetModuleState(key) ~= "hidden"
+end
+
+-- Should the setup wizard PRE-CHECK this module? (the former "default on" signal, e.g. a
+-- class-conditional function.) Recommendation != auto-enable; the user still confirms.
+function core.IsRecommended(key)
 	local M = ns.modules[key]
-	local def = M and M.default
-	if type(def) == "function" then def = def() end -- class-conditional defaults resolve here
-	return def and "unlocked" or "hidden" -- seed from default on first run
+	if not M then return false end
+	local d = M.default
+	if type(d) == "function" then
+		local ok, res = pcall(d)
+		return ok and res and true or false
+	end
+	return d and true or false
+end
+
+-- First-run setup gate + "new module since last visit" tracking, both PER-CHARACTER.
+function core.IsSetupDone() return ns.cdb and ns.cdb.setupDone and true or false end
+function core.MarkSetupDone() if ns.cdb then ns.cdb.setupDone = true end end
+
+local function seenStore() ns.cdb.seen = ns.cdb.seen or {}; return ns.cdb.seen end
+function core.IsNewModule(key) return not seenStore()[key] end
+function core.MarkModuleSeen(key) seenStore()[key] = true end
+function core.MarkAllSeen()
+	core.EachAvailableModule(function(M) seenStore()[M.key] = true end)
+	if core.RefreshMinimap then core.RefreshMinimap() end -- clear the "new" badge
+end
+function core.CountNewModules()
+	local n = 0
+	core.EachAvailableModule(function(M) if core.IsNewModule(M.key) then n = n + 1 end end)
+	return n
 end
 
 function core.SetModuleState(key, state)
 	local M = ns.modules[key]
 	if not M then return end
+	-- Single choke point for every caller (Hub, Settings, StartModules, and the module slash
+	-- aliases). Guard the class gate here so e.g. `/bb` on a non-Shaman can't force-enable a
+	-- module that's meant to be invisible to that character.
+	if not core.IsAvailable(key) then return end
 	local prev = core.GetModuleState(key)
 	if state == "hidden" then
-		if prev ~= "hidden" and M._enabled then
+		-- Tear down on ANY non-hidden -> hidden transition, not only when M._enabled is true: a
+		-- partially-failed Enable (events/CLEU/tickers registered, then it errored) leaves
+		-- _enabled false but live subs, and this is the only place that cleans them up. The
+		-- teardown calls are all idempotent / nil-guarded, so running them is always safe.
+		if prev ~= "hidden" then
 			core.SafeCall(key .. ":Disable", M.Disable, M)
 			core.CancelTickers(key)
 			core.UnsubscribeCLEU(key)
@@ -216,10 +285,12 @@ function core.SetModuleState(key, state)
 		if M._enabled then
 			core.SafeCall(key .. ":SetDisplayState", M.SetDisplayState, M, state)
 		end
+		M._lastShown = state -- remember unlocked/locked so re-enabling restores it
 	end
 	stateStore()[key] = state
 	if core.RefreshMinimap then core.RefreshMinimap() end
 	if core.RefreshSettingsUI then core.RefreshSettingsUI() end
+	if core.RefreshHub then core.RefreshHub() end
 end
 
 -- Cycle for the minimap dropdown: hidden -> unlocked -> locked -> hidden.
@@ -228,6 +299,35 @@ function core.CycleModuleState(key)
 	local nextState = (s == "hidden" and "unlocked") or (s == "unlocked" and "locked") or "hidden"
 	core.SetModuleState(key, nextState)
 	return nextState
+end
+
+-- Enable/disable as a plain boolean (the Hub + wizard use this). Enabling restores the module's
+-- last shown state, or picks a sensible one: framed modules come back UNLOCKED (so they can be
+-- positioned), frameless ones LOCKED (just "on"). Locking is a separate concern (SetLocked).
+function core.SetEnabled(key, on)
+	if on then
+		local M = ns.modules[key]
+		local want = M and M._lastShown
+		if want ~= "unlocked" and want ~= "locked" then
+			want = (M and M.hasFrame) and "unlocked" or "locked"
+		end
+		core.SetModuleState(key, want)
+	else
+		core.SetModuleState(key, "hidden")
+	end
+end
+
+-- Lock / unlock an enabled framed module's window (no-op if it's disabled).
+function core.SetLocked(key, locked)
+	if core.GetModuleState(key) == "hidden" then return end
+	core.SetModuleState(key, locked and "locked" or "unlocked")
+end
+
+-- Bulk lock/unlock every enabled framed module (the Hub's global config-mode buttons).
+function core.SetAllFramesLocked(locked)
+	core.EachAvailableModule(function(M)
+		if M.hasFrame and core.IsEnabled(M.key) then core.SetLocked(M.key, locked) end
+	end)
 end
 
 -- Apply saved states to every AVAILABLE module (called by Boot at login). Unavailable

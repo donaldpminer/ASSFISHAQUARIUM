@@ -12,6 +12,8 @@ Core\Namespace.lua
 Core\Lib_Widgets.lua
 Core\Lib_Util.lua
 Core\Settings.lua
+Core\Hub.lua
+Core\Onboarding.lua
 Core\Minimap.lua
 Core\Boot.lua
 

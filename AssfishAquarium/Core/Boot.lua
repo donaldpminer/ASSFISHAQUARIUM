@@ -34,11 +34,13 @@ f:SetScript("OnEvent", function(_, event)
 	if core.BuildMinimap then core.BuildMinimap() end
 	if core.StartServices then core.StartServices() end -- always-on services (e.g. Windfury)
 	core.StartModules()                                 -- apply saved hidden/unlocked/locked
+	if core.MaybeShowOnboarding then core.MaybeShowOnboarding() end -- first-run setup wizard
 end)
 
 --------------------------------------------------------------------------------
--- Slash router: /aquarium (/aq). `/aq` alone opens Settings; `/aq <key> <rest>` and the
--- per-module aliases forward `rest` to that module's M.OnSlash.
+-- Slash router: /aquarium (/aq). `/aq` alone opens the Hub. Core words (hub / setup /
+-- settings) are handled here; `/aq <key> <rest>` and the per-module aliases forward
+-- `rest` to that module's M.OnSlash.
 --------------------------------------------------------------------------------
 local function route(key, rest)
 	local M = ns.modules[key]
@@ -51,12 +53,16 @@ SlashCmdList.ASSFISH = function(msg)
 	msg = (msg or ""):gsub("^%s+", ""):gsub("%s+$", "")
 	local key, rest = msg:match("^(%S+)%s*(.*)$")
 	key = key and key:lower() or ""
-	if key == "" then
+	if key == "" or key == "hub" then
+		core.ToggleHub()
+	elseif key == "setup" then
+		if core.ShowOnboarding then core.ShowOnboarding(true) end
+	elseif key == "settings" or key == "options" or key == "config" then
 		core.OpenSettings()
 	elseif ns.modules[key] then
 		route(key, rest)
 	else
-		core.OpenSettings()
+		core.ToggleHub()
 	end
 end
 

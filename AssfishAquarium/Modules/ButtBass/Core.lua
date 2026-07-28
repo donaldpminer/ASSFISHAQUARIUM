@@ -25,9 +25,11 @@ local M = core.RegisterModule({
 	key = "bb", title = "Shaman Stuff", perChar = true,
 	-- Only EXISTS for Shamans: registered so the always-on Windfury service keeps its M/DB, but
 	-- hidden from the minimap + settings and never enabled for other classes. (The WF Now
-	-- announcer still runs for everyone.) Enabled + unlocked by default on Shamans.
+	-- announcer still runs for everyone.) Recommended (wizard pre-check) on Shamans.
 	available = function() return select(2, UnitClass("player")) == "SHAMAN" end,
 	default = true,
+	category = "Class", source = "mine", hasFrame = true,
+	desc = "Restoration Shaman heal tracker, party frame, and Windfury tools.",
 })
 
 --------------------------------------------------------------------------------

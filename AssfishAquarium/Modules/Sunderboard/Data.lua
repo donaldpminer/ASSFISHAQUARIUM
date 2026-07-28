@@ -13,7 +13,11 @@
 
 local ADDON, ns = ...
 local core = ns.core
-local M = core.RegisterModule({ key = "sb", title = "Sunderboard", perChar = false, default = true })
+local M = core.RegisterModule({
+	key = "sb", title = "Sunderboard", perChar = false, default = true,
+	category = "Raid", source = "mine", hasFrame = true,
+	desc = "Leaderboard for armor-reduction debuffs (Sunder / Expose / Faerie Fire / CoR).",
+})
 
 M.Data = {}
 local D = M.Data
