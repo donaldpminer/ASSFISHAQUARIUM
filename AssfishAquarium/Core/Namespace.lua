@@ -258,15 +258,11 @@ end
 --------------------------------------------------------------------------------
 core.SUITE_PREFIX = "AssfishAquarium_"
 
--- ADOPTED addons: third-party addons Donald has adopted/repaired and bundles in the suite. They
--- keep their ORIGINAL folder name + code untouched, so we can't detect them by the suite prefix;
--- this manifest lists them by addon name. Each entry supplies the Hub's category + a friendly
--- description (their own TOC Notes are often terse/versiony). They show as "(Adopted)" in the Hub.
+-- ADOPTED addons: third-party addons bundled in the suite under their ORIGINAL folder name + code
+-- (so the suite prefix can't detect them). List each here by addon name with a Hub category + a
+-- friendly description; they then appear as "(Adopted)" in the Hub. None bundled right now.
 core.ADOPTED = {
-	BuffTimers = {
-		hubCategory = "Buffs",
-		desc = "Shows the exact remaining time on your buff / debuff icons. Third-party addon, repaired for the 1.15.9 UI.",
-	},
+	-- ["SomeAddon"] = { hubCategory = "Buffs", desc = "one-line description" },
 }
 
 local CA = C_AddOns or {}

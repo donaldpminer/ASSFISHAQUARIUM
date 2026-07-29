@@ -7,9 +7,9 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 ADDONS_DIR="${WOW_ADDONS_DIR:-/c/Program Files (x86)/World of Warcraft/_classic_era_/Interface/AddOns}"
 
-# The Core addon, one addon per tool, plus adopted third-party addons (kept under their
-# original folder name).
-ADDONS="AssfishAquarium AssfishAquarium_Mobber AssfishAquarium_FFTracker AssfishAquarium_Sunderboard AssfishAquarium_ButtBass AssfishAquarium_Windfury BuffTimers"
+# The Core addon plus one addon per tool. (Adopted third-party addons, if any, are listed by
+# their original folder name here too.)
+ADDONS="AssfishAquarium AssfishAquarium_Mobber AssfishAquarium_FFTracker AssfishAquarium_Sunderboard AssfishAquarium_ButtBass AssfishAquarium_Windfury"
 
 if [ ! -d "$ADDONS_DIR" ]; then
   echo "ERROR: AddOns dir not found: $ADDONS_DIR"
