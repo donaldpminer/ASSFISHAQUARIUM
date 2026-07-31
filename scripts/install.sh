@@ -9,7 +9,7 @@ ADDONS_DIR="${WOW_ADDONS_DIR:-/c/Program Files (x86)/World of Warcraft/_classic_
 
 # The Core addon plus one addon per tool. (Adopted third-party addons, if any, are listed by
 # their original folder name here too.)
-ADDONS="AssfishAquarium AssfishAquarium_Mobber AssfishAquarium_FFTracker AssfishAquarium_Sunderboard AssfishAquarium_ButtBass AssfishAquarium_Windfury"
+ADDONS="AssfishAquarium AssfishAquarium_Mobber AssfishAquarium_FFTracker AssfishAquarium_Sunderboard AssfishAquarium_ButtBass AssfishAquarium_Windfury AssfishAquarium_UltimateTargetFrame"
 
 if [ ! -d "$ADDONS_DIR" ]; then
   echo "ERROR: AddOns dir not found: $ADDONS_DIR"

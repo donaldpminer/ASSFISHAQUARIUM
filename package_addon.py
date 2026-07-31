@@ -27,6 +27,7 @@ ADDONS = [
     "AssfishAquarium_Sunderboard",
     "AssfishAquarium_ButtBass",
     "AssfishAquarium_Windfury",
+    "AssfishAquarium_UltimateTargetFrame",
 ]
 
 EXCLUDE_NAMES = {".DS_Store", "Thumbs.db", "__pycache__", ".git"}

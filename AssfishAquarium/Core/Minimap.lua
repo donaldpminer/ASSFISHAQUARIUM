@@ -46,14 +46,8 @@ end
 
 -- Badge: number of newly-registered tools not yet seen in the Hub/wizard.
 local function refreshBadge()
-	if not badge then return end
-	local n = core.CountNewModules and core.CountNewModules() or 0
-	if n > 0 then
-		badge.text:SetText(n > 9 and "9+" or tostring(n))
-		badge:Show()
-	else
-		badge:Hide()
-	end
+	-- "new tools" badge disabled per user preference -- never show it.
+	if badge then badge:Hide() end
 end
 core.RefreshMinimap = refreshBadge -- Namespace calls this on any state change
 
@@ -61,7 +55,10 @@ local function showTooltip(self)
 	GameTooltip:SetOwner(self, "ANCHOR_LEFT")
 	GameTooltip:SetText("ASSFISH AQUARIUM", 1, 1, 1)
 	core.EachAvailableModule(function(M)
-		local s = STATE_LABEL[core.GetModuleState(M.key)] or STATE_LABEL.hidden
+		local state = core.GetModuleState(M.key)
+		local s = STATE_LABEL[state] or STATE_LABEL.hidden
+		-- windowless tools (no movable frame) have no lock concept -- show a plain on/off
+		if not M.hasFrame and state ~= "hidden" then s = { 0.4, 1, 0.4, "on" } end
 		local label = M.title
 		if core.IsNewModule and core.IsNewModule(M.key) then label = label .. " |cff40ff40(new)|r" end
 		GameTooltip:AddDoubleLine(label, s[4], 0.8, 0.8, 0.8, s[1], s[2], s[3])

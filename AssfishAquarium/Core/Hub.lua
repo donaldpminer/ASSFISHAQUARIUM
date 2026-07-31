@@ -288,8 +288,6 @@ local function build()
 		"Show + move every loaded window")
 	actionBtn(118, "Lock frames", 90, function() core.SetAllFramesLocked(true) end,
 		"Pin every loaded window in place")
-	actionBtn(292, "Settings", 90, function() core.OpenSettings() end,
-		"Open the full settings panel")
 
 	listMsg = frame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 	listMsg:SetPoint("CENTER", 0, -20)
