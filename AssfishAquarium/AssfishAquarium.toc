@@ -2,7 +2,7 @@
 ## Title: ASSFISH AQUARIUM
 ## Notes: Core + shared UI for Donald's Classic Era suite. Each tool (Mobber, FF Tracker, Sunderboard, Shaman Stuff) is its own addon you can toggle in this list or in the Hub.
 ## Author: donaldpminer
-## Version: 0.3.0
+## Version: 0.3.1
 ## SavedVariables: AssfishAquariumDB
 ## SavedVariablesPerCharacter: AssfishAquariumCharDB
 ## IconTexture: Interface\Icons\INV_Misc_Fish_24

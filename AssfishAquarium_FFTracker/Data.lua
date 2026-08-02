@@ -63,6 +63,7 @@ M.SPELLS = {
 	{ key = "shadow_weaving", name = "Shadow Weaving", class = "PRIEST", ids = { 15258 }, duration = 15, auraType = "HARMFUL", color = { 0.72, 0.45, 0.88 }, maxStacks = 5 },
 	{ key = "renew", name = "Renew", class = "PRIEST", ids = { 139, 6074, 6075, 6076, 6077, 6078, 10927, 10928, 10929, 25315 }, duration = 15, auraType = "HELPFUL", color = { 0.85, 0.85, 0.60 } },
 	{ key = "power_word_shield", name = "Power Word: Shield", class = "PRIEST", ids = { 17, 592, 600, 3747, 6065, 6066, 10898, 10899, 10900, 10901 }, duration = 30, auraType = "HELPFUL", color = { 0.60, 0.75, 0.98 } },
+	{ key = "power_infusion", name = "Power Infusion", class = "PRIEST", ids = { 10060 }, duration = 15, auraType = "HELPFUL", color = { 0.98, 0.82, 0.35 } },
 	{ key = "weakened_soul", name = "Weakened Soul", class = "PRIEST", ids = { 6788 }, duration = 15, auraType = "HARMFUL", color = { 0.55, 0.55, 0.62 } },
 	{ key = "abolish_disease", name = "Abolish Disease", class = "PRIEST", ids = { 552 }, duration = 20, auraType = "HELPFUL", color = { 0.80, 0.78, 0.50 } },
 	{ key = "shackle_undead", name = "Shackle Undead", class = "PRIEST", ids = { 9484, 9485, 10955 }, duration = 50, auraType = "HARMFUL", color = { 0.90, 0.88, 0.62 } },
